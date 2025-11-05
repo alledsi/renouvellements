@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-center">
+  <div class="card shadow p-4 align-items-center mt-4 " style="width: 35rem;">
+    <h4 class="text-center mb-4">Connexion</h4>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="mb-4">
+        <label>Matricule ACE &nbsp;</label>
+        {{ form.username }}
+      </div>
+      <div class="mb-4">
+        <label>Mot de passe &nbsp;&nbsp;</label>
+        {{ form.password }}
+      </div>
+      <button type="submit" class="btn btn-success w-100 mt-2">Se connecter</button>
+    </form>
+  </div>
+</div>
+  {% endblock %}

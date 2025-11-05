@@ -1,0 +1,80 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accès non autorisé</title>
+
+  <!-- Option : rediriger automatiquement vers le login après 15 secondes -->
+  <meta http-equiv="refresh" content="15;url={% url 'logout' %}">
+
+  <!-- Bootstrap CDN (optionnel) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#f8f9fa; }
+    .box {
+      max-width: 720px;
+      margin: 6vh auto;
+      background: white;
+      border-radius: .5rem;
+      padding: 2rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    .notice-icon {
+      width: 72px;
+      height: 72px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #ffc9c9;
+      color: #8a1f1f;
+      font-weight: 700;
+      font-size: 32px;
+      margin-right: .75rem;
+    }
+    .small-muted { color: #6c757d; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="box">
+      <div class="d-flex align-items-center mb-3">
+        <div class="notice-icon">!</div>
+        <div>
+          <h3 class="mb-0">Accès non autorisé</h3>
+          <div class="small-muted">Vous n'avez pas la permission d'accéder à cette page.</div>
+        </div>
+      </div>
+
+      <p class="mb-3">
+        Si vous pensez que c'est une erreur, contactez l'administrateur ou connectez-vous avec un compte autorisé.
+      </p>
+
+      <div class="d-flex gap-2">
+        <a href="{% url 'logout' %}" class="btn btn-primary">Utiliser un compte autorisé</a>
+        <a href="mailto:alle.niang@acepsenegal.com" class="btn btn-outline-success">Contacter l'administrateur</a>
+      </div>
+
+      <hr/>
+
+      <p class="small-muted mb-0">Vous serez redirigé vers la page de connexion dans quelques secondes.</p>
+    </div>
+  </div>
+  {% now "Y" as current_year %}
+<footer style="
+  background-color:#f8f9fa;
+  color:#555;
+  text-align:center;
+  padding:15px 0;
+  font-size:14px;
+  border-top:1px solid #ddd;
+  position:fixed;
+  bottom:0;
+  width:100%;
+">
+  © {{ current_year }} - Tous droits réservés | ACEP SENEGAL
+</footer>
+</body>
+</html>
