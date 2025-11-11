@@ -176,7 +176,7 @@ btn.addEventListener('click', async () => {
 
     try {
         const user = "{{ request.user.username }}";
-        const response = await fetch(`http://127.0.0.1:8008/proposals/proposals/${user}/generate_prets`, {
+        const response = await fetch(`http://192.168.0.122:8008/proposals/proposals/${user}/generate_prets`, {
             method: "POST"
         });
 

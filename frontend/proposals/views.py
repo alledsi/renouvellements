@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
-API_URL = "http://127.0.0.1:8008"
+API_URL = "http://192.168.0.122:8008"
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -40,7 +40,7 @@ def change_password(request):
 @login_required
 def list_proposals(request):
     user = request.user.username
-    url_verif = f"http://127.0.0.1:8008/proposals/verifier_utilisateur/{user}"
+    url_verif = f"http://192.168.0.122:8008/proposals/verifier_utilisateur/{user}"
     try:
         response = requests.get(url_verif, timeout=5)
         data = response.json()
