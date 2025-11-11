@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<div class="d-flex justify-content-center">
+<div class="d-flex justify-content-center" >
   <div class="card shadow p-4 align-items-center mt-4 " style="width: 35rem;">
-    <h4 class="text-center mb-4">Connexion</h4>
+    <h4 class="text-center mb-4" style="color:#02564A; font-size: 1.8rem;">Connexion</h4>
     <form method="post">
       {% csrf_token %}
       {{ form.non_field_errors }}
@@ -14,8 +15,13 @@
         <label>Mot de passe &nbsp;&nbsp;</label>
         {{ form.password }}
       </div>
-      <button type="submit" class="btn btn-success w-100 mt-2">Se connecter</button>
+      <button type="submit" class="btn btn-success w-100 mt-2" style="background-color: #02564A; font-size: 1.3rem;">Se connecter</button>
     </form>
+  </div>
+</div>
+<div class="d-flex justify-content-center" >
+  <div class="card shadow p-1 align-items-center mt-5 mb-5" style="width: 35rem;">
+    <img src="{% static 'images/ScorFlowlarge.png' %}" alt="Logo" style="width: 80%; height: auto; margin-bottom: 15px;">
   </div>
 </div>
   {% endblock %}

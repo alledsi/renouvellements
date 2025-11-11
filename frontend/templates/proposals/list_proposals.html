@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
 <div class="container my-5">
 
@@ -22,11 +23,13 @@
   <div id="alertPlaceholder" class="my-3"></div>
   <!-- Statistiques -->
   <div class="row g-3 mb-4">
-    <div class="col-md-3 col-6"><div class="card text-center"><div class="card-body"><div class="text-primary small">Total</div><div class="fs-4 fw-bold">{{ stats.total }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-warning"><div class="card-body"><div class="text-warning small">En attente</div><div class="fs-4 fw-bold">{{ stats.en_attente }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body"><div class="text-success small">Approuvés</div><div class="fs-4 fw-bold">{{ stats.approuve }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-danger"><div class="card-body"><div class="text-danger small">Rejetés</div><div class="fs-4 fw-bold">{{ stats.rejete }}</div></div></div></div>
-    <div class="col-md-3 col-6"><div class="card text-center border-info"><div class="card-body"><div class="text-info small">Montant total</div><div class="fs-4 fw-bold">{{ stats.mt_total|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-primary"><div class="card-body"><div class="text-primary fs-4">Total</div><div class="fs-4 fw-bold">{{ stats.total }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_total|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-warning"><div class="card-body"><div class="text-warning fs-4">En attente</div><div class="fs-4 fw-bold">{{ stats.en_attente }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_en_attente|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-danger"><div class="card-body"><div class="text-danger fs-4">Rejetés</div><div class="fs-4 fw-bold">{{ stats.rejete }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_rejete|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-info"><div class="card-body"><div class="text-info fs-4">Révisés</div><div class="fs-4 fw-bold">{{ stats.revise }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_revise|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body"><div class="text-success fs-4">Approuvés</div><div class="fs-4 fw-bold">{{ stats.approuve }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_approuve|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body"><div class="text-success fs-4">Prêts générés</div><div class="fs-4 fw-bold">{{ stats.genere }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_genere|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    
   </div>
 
   <!-- Filtres -->
@@ -38,7 +41,7 @@
       <option value="REJETE" {% if statut_filter == 'REJETE' %}selected{% endif %}>Rejetés</option>
       <option value="REVISE" {% if statut_filter == 'REVISE' %}selected{% endif %}>Révisés</option>
     </select>
-    <input id="searchInput" class="form-control w-25" placeholder="Rechercher un client, bureau statut...">
+    <input id="searchInput" class="form-control w-25" placeholder="Rechercher un client, bureau, statut...">
   </form>
 
   <!-- Tableau -->
@@ -49,6 +52,8 @@
           <tr>
             <th>ID</th>
             <th>Client</th>
+            <th>Prêt Scoré</th>
+            <th>Mt Original</th>
             <th>Bureau</th>
             <th class="text-end">Score</th>
             <th class="text-end">Mt Proposé</th>
@@ -63,6 +68,8 @@
           <tr>
             <td>{{ p.ID_PROPOSITION }}</td>
             <td><strong>{{ p.NOM_COMPLET }}</strong><br><small>{{ p.MATRICULE_CLIENT }}</small></td>
+            <td>{{ p.NO_PRET_SCORE }}</td>
+            <td class="text-end">{{ p.MT_PRET_ORIGINAL|floatformat:0 | intcomma }} FCFA</td>
             <td>{{ p.LIBELLE_BUREAU }}</td>
             <td class="text-end">{{ p.SCORE_TOTAL }} %</td>
             <td class="text-end">{{ p.MT_PROPOSE|floatformat:0 | intcomma }} FCFA</td>
@@ -140,6 +147,11 @@
       </table>
     </div>
   </div>
+  <div class="d-flex justify-content-center" >
+    <div class="card shadow p-1 align-items-center mt-5 mb-5" style="width: 35rem;">
+      <img src="{% static 'images/ScorFlowlarge.png' %}" alt="Logo" style="width: 80%; height: auto; margin-bottom: 15px;">
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -176,7 +188,7 @@ btn.addEventListener('click', async () => {
 
     try {
         const user = "{{ request.user.username }}";
-        const response = await fetch(`http://192.168.0.122:8008/proposals/proposals/${user}/generate_prets`, {
+        const response = await fetch(`http://localhost:8008/proposals/proposals/${user}/generate_prets`, {
             method: "POST"
         });
 

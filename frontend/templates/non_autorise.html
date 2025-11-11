@@ -39,7 +39,7 @@
 </head>
 <body>
   <div class="container">
-    <div class="box">
+    <div class="box" style="width: 35rem;">
       <div class="d-flex align-items-center mb-3">
         <div class="notice-icon">!</div>
         <div>
@@ -54,7 +54,7 @@
 
       <div class="d-flex gap-2">
         <a href="{% url 'logout' %}" class="btn btn-primary">Utiliser un compte autorisé</a>
-        <a href="mailto:alle.niang@acepsenegal.com" class="btn btn-outline-success">Contacter l'administrateur</a>
+        <a href="mailto:support@acepsenegal.com" class="btn btn-outline-success">Contacter l'administrateur</a>
       </div>
 
       <hr/>
@@ -62,6 +62,11 @@
       <p class="small-muted mb-0">Vous serez redirigé vers la page de connexion dans quelques secondes.</p>
     </div>
   </div>
+  <div class="d-flex justify-content-center" >
+  <div class="card shadow p-1 align-items-center mt-4 mb-5" style="width: 35rem;">
+    <img src="{% static 'images/ScorFlowlarge.png' %}" alt="Logo" style="width: 80%; height: auto; margin-bottom: 15px;">
+  </div>
+</div>
   {% now "Y" as current_year %}
 <footer style="
   background-color:#f8f9fa;

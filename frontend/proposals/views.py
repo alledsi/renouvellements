@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
-API_URL = "http://192.168.0.122:8008"
+API_URL = "http://localhost:8008"
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -40,7 +40,7 @@ def change_password(request):
 @login_required
 def list_proposals(request):
     user = request.user.username
-    url_verif = f"http://192.168.0.122:8008/proposals/verifier_utilisateur/{user}"
+    url_verif = f"http://localhost:8008/proposals/verifier_utilisateur/{user}"
     try:
         response = requests.get(url_verif, timeout=5)
         data = response.json()
@@ -75,9 +75,16 @@ def list_proposals(request):
         "total": len(data),
         "en_attente": sum(1 for d in data if d.get("STATUT_PROPOSITION") == "EN_ATTENTE"),
         "approuve": sum(1 for d in data if d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == 'N'),
+        "genere": sum(1 for d in data if d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == 'Y'),
         "rejete": sum(1 for d in data if d.get("STATUT_PROPOSITION") == "REJETE"),
+        "revise": sum(1 for d in data if d.get("STATUT_PROPOSITION") == "REVISE"),
         "mt_total": sum(float(d.get("MT_PROPOSE") or 0) for d in data),
         "mt_accorde": sum(float(d.get("MT_ACCORDE") or 0) for d in data),
+        "mt_approuve": sum(float(d.get("MT_ACCORDE") or 0) for d in data if d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == 'N'),
+        "mt_genere": sum(float(d.get("MT_ACCORDE") or 0) for d in data if d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == 'Y'),
+        "mt_en_attente": sum(float(d.get("MT_PROPOSE") or 0) for d in data if d.get("STATUT_PROPOSITION") == "EN_ATTENTE"),
+        "mt_rejete": sum(float(d.get("MT_PROPOSE") or 0) for d in data if d.get("STATUT_PROPOSITION") == "REJETE"),
+        "mt_revise": sum(float(d.get("MT_PROPOSE") or 0) for d in data if d.get("STATUT_PROPOSITION") == "REVISE")
     }
 
 
