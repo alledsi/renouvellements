@@ -32,6 +32,32 @@ class ProposalOut(BaseModel):
     DATE_GENERATION: Optional[str]
     JOURS_DECISION_GENERATION: Optional[int]
 
+class ProposalOutAll(BaseModel):
+    CODE_REGION: Optional[str]
+    ID_PROPOSITION: Optional[int]
+    NO_PRET_SCORE: Optional[int]
+    MT_PRET_ORIGINAL: Optional[float]
+    REF_COMITE: Optional[str]
+    STATUT_PROPOSITION: Optional[str]
+    MATRICULE_CLIENT: Optional[str]
+    NOM_COMPLET: Optional[str]
+    CODE_BUREAU: Optional[str]
+    LIBELLE_BUREAU: Optional[str]
+    SCORE_TOTAL: Optional[float]
+    MT_PROPOSE: Optional[float]
+    MT_ACCORDE: Optional[float]
+    D_PREM_ECH: Optional[str]
+    DATE_DECISION: Optional[str]
+    COMMENTAIRE_DECISION: Optional[str]
+    GENERER_GARANTIES: Optional[str]
+    PRET_GENERE: Optional[str]
+    USER_PROPOSITION: Optional[str]
+    DATE_PROPOSITION: Optional[str]
+    USER_GENERATION: Optional[str]
+    DATE_GENERATION: Optional[str]
+    JOURS_DECISION_GENERATION: Optional[int]
+    LIB_REGION: Optional[str]
+
 class DecisionIn(BaseModel):
     statut_decision: str  # APPROUVE/REJETE/REVISE
     mt_accorde: Optional[float]
@@ -162,6 +188,88 @@ def list_proposals(user: str):
     finally:
         conn.close()
 
+@router.get("/list/all", response_model=List[ProposalOutAll])
+def list_proposals_all():
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        sql = """
+        SELECT 
+            v.CODE_REGION,
+            v.ID_PROPOSITION,
+            v.NO_PRET_SCORE,
+            v.MT_PRET_ORIGINAL,
+            v.REF_COMITE,
+            v.STATUT_PROPOSITION,
+            v.MATRICULE_CLIENT,
+            v.NOM_COMPLET,
+            v.CODE_BUREAU,
+            v.LIBELLE_BUREAU,
+            v.SCORE_TOTAL,
+            v.MT_PROPOSE,
+            v.MT_ACCORDE,
+            v.D_PREM_ECH,
+            v.DATE_DECISION,
+            v.COMMENTAIRE_DECISION,
+            v.GENERER_GARANTIES,
+            v.PRET_GENERE,
+            v.USER_PROPOSITION,
+            v.DATE_PROPOSITION,
+            v.USER_GENERATION,
+            v.DATE_GENERATION,
+            v.JOURS_DECISION_GENERATION,
+            r.LIB_REGION
+        FROM V_RENOUVELLEMENT v
+        LEFT JOIN REGION r
+        ON TRIM(v.CODE_REGION) = TRIM(r.CODE_REGION)
+        """
+        cur.execute(sql)
+        def safe(val):
+            if val is None:
+                return None
+            if isinstance(val, (datetime.datetime, datetime.date)):
+                return val.isoformat()
+            if isinstance(val, decimal.Decimal):
+                return float(val)
+            return val
+        rows = cur.fetchall()
+        result = [dict(
+            CODE_REGION = safe(r[0]),
+            ID_PROPOSITION = safe(r[1]),
+            NO_PRET_SCORE = safe(r[2]),
+            MT_PRET_ORIGINAL = safe(r[3]),
+            REF_COMITE = safe(r[4]),
+            STATUT_PROPOSITION = safe(r[5]),
+            MATRICULE_CLIENT = safe(r[6]),
+            NOM_COMPLET = safe(r[7]),
+            CODE_BUREAU = safe(r[8]),
+            LIBELLE_BUREAU = safe(r[9]),
+            SCORE_TOTAL = safe(r[10]),
+            MT_PROPOSE = safe(r[11]),
+            MT_ACCORDE = safe(r[12]),
+            D_PREM_ECH = safe(r[13]),
+            DATE_DECISION = safe(r[14]),
+            COMMENTAIRE_DECISION = safe(r[15]),
+            GENERER_GARANTIES = safe(r[16]),
+            PRET_GENERE = safe(r[17]),
+            USER_PROPOSITION = safe(r[18]),
+            DATE_PROPOSITION = safe(r[19]),
+            USER_GENERATION = safe(r[20]),
+            DATE_GENERATION = safe(r[21]),
+            JOURS_DECISION_GENERATION = safe(r[22]),
+            LIB_REGION = safe(r[23])
+        ) for r in rows ]
+        print("✅ Nombre de lignes :", len(result))
+        return result
+        
+    except Exception as e:
+        import traceback
+        print("\n========== ERREUR ORACLE ==========")
+        traceback.print_exc()
+        print("==================================\n")
+        raise HTTPException(status_code=500, detail=f"Erreur Oracle : {e}")
+    finally:
+        conn.close()
 
 @router.post("/proposals/{user}/{id}/decision")
 def set_decision(user: str, id: int, decision: DecisionIn):

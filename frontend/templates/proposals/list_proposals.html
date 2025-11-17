@@ -34,14 +34,14 @@
 
   <!-- Filtres -->
   <form method="get" class="d-flex gap-3 align-items-center mb-3">
-    <select name="statut" class="form-select w-auto" onchange="this.form.submit()">
+    <select name="statut" class="form-select w-25" onchange="this.form.submit()">
       <option value="TOUS" {% if statut_filter == 'TOUS' %}selected{% endif %}>Tous les statuts</option>
       <option value="EN_ATTENTE" {% if statut_filter == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
       <option value="APPROUVE" {% if statut_filter == 'APPROUVE' %}selected{% endif %}>Approuvés</option>
       <option value="REJETE" {% if statut_filter == 'REJETE' %}selected{% endif %}>Rejetés</option>
       <option value="REVISE" {% if statut_filter == 'REVISE' %}selected{% endif %}>Révisés</option>
     </select>
-    <input id="searchInput" class="form-control w-25" placeholder="Rechercher un client, bureau, statut...">
+    <input id="searchInput" class="form-control w-50" placeholder="Rechercher un client, prêt, montant, bureau, statut ...">
   </form>
 
   <!-- Tableau -->
@@ -109,13 +109,13 @@
 
           <!-- Formulaire de décision -->
           <tr class="collapse" id="decision{{ p.ID_PROPOSITION }}">
-            <td colspan="7">
+            <td colspan="12">
               <form method="POST" action="{% url 'decide_proposal' p.ID_PROPOSITION %}" class="p-3 border-top">
                 {% csrf_token %}
                 <div class="row g-3">
                   <div class="col-md-3">
                     <label class="form-label">Montant accordé</label>
-                    <input type="number" step="0.01" name="mt_accorde" class="form-control">
+                    <input type="number"  name="mt_accorde" value="{{p.MT_PROPOSE|floatformat:0}}"  class="form-control">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">Date 1ère échéance</label>
@@ -188,7 +188,7 @@ btn.addEventListener('click', async () => {
 
     try {
         const user = "{{ request.user.username }}";
-        const response = await fetch(`http://localhost:8008/proposals/proposals/${user}/generate_prets`, {
+        const response = await fetch(`http://192.168.0.122:8008/proposals/proposals/${user}/generate_prets`, {
             method: "POST"
         });
 

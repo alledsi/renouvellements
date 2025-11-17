@@ -9,7 +9,7 @@ app.include_router(proposals.router, prefix="/proposals", tags=["proposals"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4884"],  # ou "*" pour test local
+    allow_origins=["http://192.168.0.122:4884"],  # ou "*" pour test local
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
