@@ -25,9 +25,9 @@
   <div class="row g-3 mb-4">
     <div class="col-md-2 col-6"><div class="card text-center border-primary"><div class="card-body"><div class="text-primary fs-4">Total</div><div class="fs-4 fw-bold">{{ stats.total }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_total|floatformat:0 | intcomma }} FCFA</div></div></div></div>
     <div class="col-md-2 col-6"><div class="card text-center border-warning"><div class="card-body"><div class="text-warning fs-4">En attente</div><div class="fs-4 fw-bold">{{ stats.en_attente }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_en_attente|floatformat:0 | intcomma }} FCFA</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-danger"><div class="card-body"><div class="text-danger fs-4">Rejetés</div><div class="fs-4 fw-bold">{{ stats.rejete }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_rejete|floatformat:0 | intcomma }} FCFA</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-info"><div class="card-body"><div class="text-info fs-4">Révisés</div><div class="fs-4 fw-bold">{{ stats.revise }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_revise|floatformat:0 | intcomma }} FCFA</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body"><div class="text-success fs-4">Approuvés</div><div class="fs-4 fw-bold">{{ stats.approuve }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_approuve|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-danger"><div class="card-body"><div class="text-danger fs-4">Rejetées</div><div class="fs-4 fw-bold">{{ stats.rejete }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_rejete|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-info"><div class="card-body"><div class="text-info fs-4">Révisées</div><div class="fs-4 fw-bold">{{ stats.revise }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_revise|floatformat:0 | intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body"><div class="text-success fs-4">Approuvées</div><div class="fs-4 fw-bold">{{ stats.approuve }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_approuve|floatformat:0 | intcomma }} FCFA</div></div></div></div>
     <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body"><div class="text-success fs-4">Prêts générés</div><div class="fs-4 fw-bold">{{ stats.genere }}</div><hr><div class="fs-6 fw-bold">{{ stats.mt_genere|floatformat:0 | intcomma }} FCFA</div></div></div></div>
     
   </div>
@@ -37,9 +37,9 @@
     <select name="statut" class="form-select w-25" onchange="this.form.submit()">
       <option value="TOUS" {% if statut_filter == 'TOUS' %}selected{% endif %}>Tous les statuts</option>
       <option value="EN_ATTENTE" {% if statut_filter == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
-      <option value="APPROUVE" {% if statut_filter == 'APPROUVE' %}selected{% endif %}>Approuvés</option>
-      <option value="REJETE" {% if statut_filter == 'REJETE' %}selected{% endif %}>Rejetés</option>
-      <option value="REVISE" {% if statut_filter == 'REVISE' %}selected{% endif %}>Révisés</option>
+      <option value="APPROUVE" {% if statut_filter == 'APPROUVE' %}selected{% endif %}>Approuvées</option>
+      <option value="REJETE" {% if statut_filter == 'REJETE' %}selected{% endif %}>Rejetées</option>
+      <option value="REVISE" {% if statut_filter == 'REVISE' %}selected{% endif %}>Révisées</option>
     </select>
     <input id="searchInput" class="form-control w-50" placeholder="Rechercher un client, prêt, montant, bureau, statut ...">
   </form>
@@ -50,14 +50,13 @@
       <table class="table align-middle table-hover mb-0" id="propositionsTable">
         <thead class="table-dark" style="position: sticky; top:0; z-index:2;">
           <tr>
-            <th>ID</th>
+            <th class="text-center">ID</th>
             <th>Client</th>
-            <th>Prêt Scoré</th>
-            <th>Mt Original</th>
             <th>Bureau</th>
-            <th class="text-end">Score</th>
-            <th class="text-end">Mt Proposé</th>
-            <th class="text-end">Mt Accordé</th>
+            <th>Prêt Scoré</th>
+            <th>Score</th>
+            <th class="text-center">Mt Proposé</th>
+            <th class="text-center">Mt Accordé</th>
             <th class="text-center">Statut</th>
             <th class="text-center">Prêt généré ?</th>
             <th class="text-center">Actions</th>
@@ -68,25 +67,24 @@
           <tr>
             <td>{{ p.ID_PROPOSITION }}</td>
             <td><strong>{{ p.NOM_COMPLET }}</strong><br><small>{{ p.MATRICULE_CLIENT }}</small></td>
-            <td>{{ p.NO_PRET_SCORE }}</td>
-            <td class="text-end">{{ p.MT_PRET_ORIGINAL|floatformat:0 | intcomma }} FCFA</td>
-            <td>{{ p.LIBELLE_BUREAU }}</td>
-            <td class="text-end">{{ p.SCORE_TOTAL }} %</td>
-            <td class="text-end">{{ p.MT_PROPOSE|floatformat:0 | intcomma }} FCFA</td>
+            <td><small>{{ p.LIBELLE_BUREAU }}</small></td>
+            <td><strong>{{ p.NO_PRET_SCORE }}</strong><br><small>{{ p.MT_PRET_ORIGINAL|floatformat:0 | intcomma }} FCFA</small></td>
+            <td>{{ p.SCORE_TOTAL }} %</td>
+            <td class="text-end"><small>{{ p.MT_PROPOSE|floatformat:0 | intcomma }} FCFA</small></td>
             <td class="text-end">
               {% if p.MT_ACCORDE %}
-                {{ p.MT_ACCORDE|floatformat:0 | intcomma }} FCFA
+                <small>{{ p.MT_ACCORDE|floatformat:0 | intcomma }} FCFA</small>
               {% else %}
                <h5 class="text-center">-</h5>
               {% endif %}
             </td>
             <td class="text-center">
               {% if p.STATUT_PROPOSITION == "APPROUVE" %}
-                <span class="badge bg-success">Approuvé</span>
+                <span class="badge bg-success">Approuvée</span>
               {% elif p.STATUT_PROPOSITION == "REJETE" %}
-                <span class="badge bg-danger">Rejeté</span>
+                <span class="badge bg-danger">Rejetée</span>
               {% elif p.STATUT_PROPOSITION == "REVISE" %}
-                <span class="badge bg-info text-dark">Révisé</span>
+                <span class="badge bg-info text-dark">Révisée</span>
               {% else %}
                 <span class="badge bg-warning text-dark">En attente</span>
               {% endif %}
