@@ -12,8 +12,24 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.contrib.messages import constants as message_constants
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Aligne les tags de messages Django sur les classes Bootstrap (error -> danger)
+MESSAGE_TAGS = {message_constants.ERROR: 'danger'}
+
+# Charge un fichier .env local (non versionné) si présent
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / ".env")
+except Exception:
+    pass
+
+# URL du backend FastAPI. Configurable via la variable d'environnement FASTAPI_URL
+# (ex: dans frontend/.env -> FASTAPI_URL=http://192.168.0.122:8008).
+# Par défaut localhost:8008 pour le développement local.
+API_URL = os.environ.get("FASTAPI_URL", "http://localhost:8008").rstrip("/")
 
 
 # Quick-start development settings - unsuitable for production

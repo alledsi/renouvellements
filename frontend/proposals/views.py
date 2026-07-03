@@ -1,14 +1,17 @@
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 # Create your views here.
 
-API_URL = "http://localhost:8008"
+# URL du backend FastAPI (définie dans settings.py via la variable d'env FASTAPI_URL)
+API_URL = settings.API_URL
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -40,7 +43,7 @@ def change_password(request):
 @login_required
 def list_proposals(request):
     user = request.user.username
-    url_verif = f"http://localhost:8008/proposals/verifier_utilisateur/{user}"
+    url_verif = f"{API_URL}/proposals/verifier_utilisateur/{user}"
     try:
         response = requests.get(url_verif, timeout=5)
         data = response.json()
@@ -56,10 +59,17 @@ def list_proposals(request):
                 data = []
                 print("Erreur API FastAPI :", e)
 
-            # Filtre par statut (optionnel)
-            statut_filter = request.GET.get("statut", "TOUS")
-            if statut_filter != "TOUS":
-                data = [d for d in data if d.get("STATUT_PROPOSITION") == statut_filter]    
+            # Catégorie d'onglet (le filtrage se fait côté client)
+            for d in data:
+                st = d.get("STATUT_PROPOSITION")
+                if st == "APPROUVE":
+                    d["CAT"] = "GENERE" if d.get("PRET_GENERE") == "Y" else "APPROUVE"
+                else:
+                    d["CAT"] = st or "EN_ATTENTE"
+
+            # Tri : les propositions "En attente" en premier
+            priorite = {"EN_ATTENTE": 0, "REVISE": 1, "APPROUVE": 2, "GENERE": 3, "REJETE": 4}
+            data = sorted(data, key=lambda d: priorite.get(d.get("CAT"), 99))
 
         else:
             # ❌ non autorisé → redirection
@@ -91,7 +101,6 @@ def list_proposals(request):
     return render(request, "proposals/list_proposals.html", {
         "propositions": data,
         "stats": stats,
-        "statut_filter": statut_filter,
         "region": region
     })
 
@@ -99,50 +108,94 @@ def list_proposals(request):
 def decide_proposal(request, id_prop):
     """
     Envoie la décision vers FastAPI : /proposals/proposals/{user}/{id}/decision
+    Répond en JSON (succès OU échec) pour affichage d'un message côté client.
     """
-    if request.method == "POST":
-        statut = request.POST.get("statut")
-        mt_accorde = request.POST.get("mt_accorde") or None
-        d_prem_ech = request.POST.get("d_prem_ech") or None
-        commentaire = request.POST.get("commentaire")
-        generer_garanties = request.POST.get("generer_garanties", "Y")
-        user = request.user.username
+    if request.method != "POST":
+        return redirect("list_proposals")
 
-        payload = {
-            "statut_decision": statut,
-            "mt_accorde": float(mt_accorde) if mt_accorde else None,
-            "d_prem_ech": d_prem_ech,
-            "generer_garanties": generer_garanties,
-            "code_type_gar_demande": None,
-            "valeur_gar_demandee": None,
-            "commentaire_decision": commentaire
-        }
+    statut = request.POST.get("statut")
+    mt_accorde = request.POST.get("mt_accorde") or None
+    d_prem_ech = request.POST.get("d_prem_ech") or None
+    commentaire = request.POST.get("commentaire")
+    generer_garanties = request.POST.get("generer_garanties", "Y")
+    user = request.user.username
 
+    libelles = {
+        "APPROUVE": "Proposition approuvée",
+        "REVISE": "Proposition révisée",
+        "REJETE": "Proposition rejetée",
+    }
+
+    payload = {
+        "statut_decision": statut,
+        "mt_accorde": float(mt_accorde) if mt_accorde else None,
+        "d_prem_ech": d_prem_ech,
+        "generer_garanties": generer_garanties,
+        "code_type_gar_demande": None,
+        "valeur_gar_demandee": None,
+        "commentaire_decision": commentaire
+    }
+
+    try:
+        print(f"→ Envoi vers {API_URL}/proposals/proposals/{user}/{id_prop}/decision")
+        response = requests.post(
+            f"{API_URL}/proposals/proposals/{user}/{id_prop}/decision",
+            json=payload, timeout=15
+        )
+        if response.ok:
+            msg = libelles.get(statut, "Décision enregistrée") + " avec succès."
+            return JsonResponse({"ok": True, "message": msg})
+        # Erreur renvoyée par l'API : on récupère le détail précis
         try:
-            print(f"→ Envoi vers {API_URL}/proposals/proposals/{user}/{id_prop}/decision")
-            response = requests.post(f"{API_URL}/proposals/proposals/{user}/{id_prop}/decision", json=payload)
-            response.raise_for_status()
-        except Exception as e:
-            print("Erreur lors de l’envoi de la décision:", e)
-
-    return redirect("list_proposals")
+            detail = response.json().get("detail", "Erreur inconnue")
+        except Exception:
+            detail = response.text or "Erreur inconnue"
+        return JsonResponse(
+            {"ok": False, "message": f"Échec de la décision : {detail}"},
+            status=response.status_code
+        )
+    except Exception as e:
+        print("Erreur lors de l’envoi de la décision:", e)
+        return JsonResponse(
+            {"ok": False, "message": f"Impossible de contacter l'API : {e}"},
+            status=502
+        )
 
 
 @csrf_exempt
 def generer_prets(request):
     """
-    Appelle la procédure pkg_renouvellement_complet.generer_tous_prets_comite
-    sur FastAPI
+    Appelle pkg_renouvellement.generer_tous_prets_comite via FastAPI.
+    Répond en JSON (succès OU échec) pour affichage d'un message côté client.
     """
-    if request.method == "POST":
+    if request.method != "POST":
+        return redirect("list_proposals")
+
+    user = request.user.username
+    try:
+        print("→ Appel de pkg_renouvellement.generer_tous_prets_comite ...")
+        r = requests.post(
+            f"{API_URL}/proposals/proposals/{user}/generate_prets", timeout=120
+        )
+        if r.ok:
+            data = r.json()
+            return JsonResponse(
+                {"ok": True, "message": data.get("message", "Prêts générés avec succès.")}
+            )
         try:
-            user = request.user.username
-            print("→ Appel de pkg_renouvellement_complet.generer_tous_prets_comite ...")
-            r = requests.post(f"{API_URL}/proposals/proposals/{user}/generate_prets")
-            r.raise_for_status()
-        except Exception as e:
-            print("Erreur de génération des prêts:", e)
-    return redirect("list_proposals")
+            detail = r.json().get("detail", "Erreur inconnue")
+        except Exception:
+            detail = r.text or "Erreur inconnue"
+        return JsonResponse(
+            {"ok": False, "message": f"Échec de la génération : {detail}"},
+            status=r.status_code
+        )
+    except Exception as e:
+        print("Erreur de génération des prêts:", e)
+        return JsonResponse(
+            {"ok": False, "message": f"Impossible de contacter l'API : {e}"},
+            status=502
+        )
 
 def non_autorise_view(request):
     # Si tu veux envoyer un code HTTP 403 tout en rendant un template :

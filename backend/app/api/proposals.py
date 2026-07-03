@@ -58,6 +58,7 @@ class ProposalOutAll(BaseModel):
     JOURS_DECISION_GENERATION: Optional[int]
     LIB_REGION: Optional[str]
 
+
 class DecisionIn(BaseModel):
     statut_decision: str  # APPROUVE/REJETE/REVISE
     mt_accorde: Optional[float]
@@ -194,7 +195,7 @@ def list_proposals_all():
     try:
         cur = conn.cursor()
         sql = """
-        SELECT 
+        SELECT
             v.CODE_REGION,
             v.ID_PROPOSITION,
             v.NO_PRET_SCORE,
@@ -261,7 +262,7 @@ def list_proposals_all():
         ) for r in rows ]
         print("✅ Nombre de lignes :", len(result))
         return result
-        
+
     except Exception as e:
         import traceback
         print("\n========== ERREUR ORACLE ==========")

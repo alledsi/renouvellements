@@ -23,15 +23,27 @@
                 <a href="{% url 'change_password' %}" class="btn btn-outline-light me-2">Changer mot de passe</a>
                 <a href="{% url 'logout' %}" class="btn btn-danger">Déconnexion</a>
             {% else %}
-                <marquee class="navbar-brand">ScorFlow: Renouvellement automatique de crédits</marquee>
+                <span class="navbar-brand mb-0">ScorFlow: Renouvellement automatique de crédits</span>
                 <!-- <a href="{% url 'login' %}" class="btn btn-success">Connexion</a> -->
             {% endif %}
             </div>
         </div>
     </nav>
+
+    {% if messages %}
+    <div class="container mt-3">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="container py-4">
         {% block content %}{% endblock %}
-    
+
     </div>
     {% now "Y" as current_year %}
 <footer style="
@@ -47,5 +59,6 @@
 ">
   © {{ current_year }} - Tous droits réservés | ACEP SENEGAL
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

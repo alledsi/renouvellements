@@ -4,3 +4,7 @@ __pycache__/
 venv/
 venv_renouv/
 .env.local
+.venv/
+
+# Base de données locale (ne pas versionner : provoque des conflits binaires)
+*.sqlite3
