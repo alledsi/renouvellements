@@ -4,8 +4,26 @@ from app.db import get_conn
 from pydantic import BaseModel
 import datetime
 import decimal
+import re
 
 router = APIRouter()
+
+
+def clean_oracle_error(e):
+    """
+    Transforme une erreur Oracle en message lisible pour l'utilisateur :
+    - garde uniquement le message applicatif ORA-20xxx (raise_application_error)
+    - retire la pile technique ORA-06512 et les décimales ,00 des montants
+    """
+    raw = str(e)
+    m = re.search(r"ORA-20\d{3}:\s*(.*?)(?:\s*ORA-\d{5}|$)", raw, re.S)
+    if m:
+        msg = m.group(1).strip()
+    else:
+        msg = "Une erreur est survenue lors du traitement de la demande."
+    # Retire les décimales inutiles : 1 000 000,00 -> 1 000 000
+    msg = re.sub(r"[.,]00\b", "", msg)
+    return msg
 
 class ProposalOut(BaseModel):
     CODE_REGION: Optional[str]
@@ -344,7 +362,7 @@ def set_decision(user: str, id: int, decision: DecisionIn):
         print("\n========== ERREUR DECISION ORACLE ==========")
         traceback.print_exc()
         print("============================================\n")
-        raise HTTPException(status_code=500, detail=f"Erreur Oracle : {e}")
+        raise HTTPException(status_code=500, detail=clean_oracle_error(e))
     finally:
         conn.close()
 
@@ -379,6 +397,6 @@ def generate_prets(user: str):
     except Exception as e:
         conn.rollback()
         print("Erreur Oracle lors de la génération :", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=clean_oracle_error(e))
     finally:
         conn.close()

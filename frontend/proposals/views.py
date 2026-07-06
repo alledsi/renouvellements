@@ -220,7 +220,7 @@ def decide_proposal(request, id_prop):
         except Exception:
             detail = response.text or "Erreur inconnue"
         return JsonResponse(
-            {"ok": False, "message": f"Échec de la décision : {detail}"},
+            {"ok": False, "message": str(detail)},
             status=response.status_code
         )
     except Exception as e:
