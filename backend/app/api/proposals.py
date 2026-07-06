@@ -334,9 +334,17 @@ def set_decision(user: str, id: int, decision: DecisionIn):
         cur.callproc("pkg_renouvellement.enregistrer_decision", [id, decision.statut_decision, decision.mt_accorde, decision.d_prem_ech, decision.generer_garanties, decision.commentaire_decision, user])
         conn.commit()
         return {"ok": True}
-    except Exception as e:
+    except HTTPException:
+        # Erreurs métier volontaires (400/404) : on les laisse passer telles quelles
         conn.rollback()
         raise
+    except Exception as e:
+        conn.rollback()
+        import traceback
+        print("\n========== ERREUR DECISION ORACLE ==========")
+        traceback.print_exc()
+        print("============================================\n")
+        raise HTTPException(status_code=500, detail=f"Erreur Oracle : {e}")
     finally:
         conn.close()
 
