@@ -299,7 +299,7 @@ def set_decision(user: str, id: int, decision: DecisionIn):
     # 1) Basic validation of statut
     allowed = {"APPROUVE","REJETE","REVISE"}
     if decision.statut_decision not in allowed:
-        raise HTTPException(status_code=400, detail="Invalid status")
+        raise HTTPException(status_code=400, detail="Statut de décision invalide.")
 
     conn = get_conn()
     try:
@@ -313,17 +313,12 @@ def set_decision(user: str, id: int, decision: DecisionIn):
         """, {"id": id})
         row = cur.fetchone()
         if not row:
-            raise HTTPException(status_code=404, detail="Proposal not found")
+            raise HTTPException(status_code=404, detail="Proposition introuvable.")
         if row[1] == 'O' and decision.statut_decision == 'APPROUVE':
-            raise HTTPException(status_code=400, detail="Loan already generated")
+            raise HTTPException(status_code=400, detail="Ce prêt a déjà été généré.")
 
-        # 3) Check business rules: e.g. mt_accorde <= some limit — implement as needed
-        # Example: ensure mt_accorde is not greater than 2 * mt_propose (dummy rule)
-        cur.execute("SELECT mt_propose FROM PROPOSITION_RENOUVELLEMENT WHERE id_proposition=:id", {"id": id})
-        mt_propose = cur.fetchone()[0]
-        if decision.mt_accorde is not None and mt_propose is not None:
-            if decision.mt_accorde > mt_propose * 2:
-                raise HTTPException(status_code=400, detail="mt_accorde too large")
+        # La validation métier (montant, etc.) est assurée par la procédure Oracle
+        # pkg_renouvellement.enregistrer_decision, qui renvoie un message ORA-20xxx clair.
 
         # 4) Update decision and audit fields
         # cur.execute("""
