@@ -97,11 +97,69 @@ def list_proposals(request):
         "mt_revise": sum(float(d.get("MT_PROPOSE") or 0) for d in data if d.get("STATUT_PROPOSITION") == "REVISE")
     }
 
+    # ===== Rapport d'analyse : KPI globaux + répartition par bureau =====
+    from collections import defaultdict
+    agg = defaultdict(lambda: {
+        "nb": 0, "propose": 0.0, "accorde": 0.0,
+        "score_sum": 0.0, "score_n": 0,
+        "en_attente": 0, "approuve": 0, "genere": 0, "rejete": 0, "revise": 0,
+    })
+    for d in data:
+        b = d.get("LIBELLE_BUREAU") or "—"
+        st = d.get("STATUT_PROPOSITION")
+        gen = d.get("PRET_GENERE")
+        a = agg[b]
+        a["nb"] += 1
+        a["propose"] += float(d.get("MT_PROPOSE") or 0)
+        a["accorde"] += float(d.get("MT_ACCORDE") or 0)
+        sc = d.get("SCORE_TOTAL")
+        if sc is not None:
+            a["score_sum"] += float(sc)
+            a["score_n"] += 1
+        if st == "EN_ATTENTE":
+            a["en_attente"] += 1
+        elif st == "APPROUVE" and gen == "Y":
+            a["genere"] += 1
+        elif st == "APPROUVE":
+            a["approuve"] += 1
+        elif st == "REJETE":
+            a["rejete"] += 1
+        elif st == "REVISE":
+            a["revise"] += 1
+
+    rapport_bureaux = []
+    for b, a in sorted(agg.items(), key=lambda kv: kv[1]["nb"], reverse=True):
+        rapport_bureaux.append({
+            "bureau": b,
+            "nb": a["nb"],
+            "propose": a["propose"],
+            "accorde": a["accorde"],
+            "score_moy": (a["score_sum"] / a["score_n"]) if a["score_n"] else 0,
+            "taux": (a["accorde"] / a["propose"] * 100) if a["propose"] else 0,
+            "en_attente": a["en_attente"],
+            "approuve": a["approuve"],
+            "genere": a["genere"],
+            "rejete": a["rejete"],
+            "revise": a["revise"],
+        })
+
+    scores = [float(d["SCORE_TOTAL"]) for d in data if d.get("SCORE_TOTAL") is not None]
+    decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
+    rapport = {
+        "nb_bureaux": len(rapport_bureaux),
+        "score_moyen": (sum(scores) / len(scores)) if scores else 0,
+        "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
+        "taux_traitement": (decidees / stats["total"] * 100) if stats["total"] else 0,
+        "mt_moyen": (stats["mt_total"] / stats["total"]) if stats["total"] else 0,
+    }
+
 
     return render(request, "proposals/list_proposals.html", {
         "propositions": data,
         "stats": stats,
-        "region": region
+        "region": region,
+        "rapport": rapport,
+        "rapport_bureaux": rapport_bureaux,
     })
 
 @csrf_exempt

@@ -12,6 +12,7 @@ class ProposalOut(BaseModel):
     ID_PROPOSITION: Optional[int]
     NO_PRET_SCORE: Optional[int]
     MT_PRET_ORIGINAL: Optional[float]
+    SOLDE_A_RACHETER: Optional[float]
     REF_COMITE: Optional[str]
     STATUT_PROPOSITION: Optional[str]
     MATRICULE_CLIENT: Optional[str]
@@ -133,7 +134,8 @@ def list_proposals(user: str):
             DATE_PROPOSITION,
             USER_GENERATION,
             DATE_GENERATION,
-            JOURS_DECISION_GENERATION
+            JOURS_DECISION_GENERATION,
+            SOLDE_A_RACHETER
         FROM V_RENOUVELLEMENT
         WHERE CODE_REGION = (
         SELECT CODE_REGION
@@ -175,11 +177,12 @@ def list_proposals(user: str):
             DATE_PROPOSITION = safe(r[19]),
             USER_GENERATION = safe(r[20]),
             DATE_GENERATION = safe(r[21]),
-            JOURS_DECISION_GENERATION = safe(r[22])
+            JOURS_DECISION_GENERATION = safe(r[22]),
+            SOLDE_A_RACHETER = safe(r[23])
         ) for r in rows ]
         print("✅ Nombre de lignes :", len(result))
         return result
-        
+
     except Exception as e:
         import traceback
         print("\n========== ERREUR ORACLE ==========")
