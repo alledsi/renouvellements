@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 import requests
+import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
@@ -66,6 +67,16 @@ def list_proposals(request):
                     d["CAT"] = "GENERE" if d.get("PRET_GENERE") == "Y" else "APPROUVE"
                 else:
                     d["CAT"] = st or "EN_ATTENTE"
+
+                # Date 1ère échéance -> jj/mm/aaaa (sans l'heure)
+                dpe = d.get("D_PREM_ECH")
+                if dpe:
+                    try:
+                        d["D_PREM_ECH_FMT"] = datetime.datetime.fromisoformat(dpe).strftime("%d/%m/%Y")
+                    except Exception:
+                        d["D_PREM_ECH_FMT"] = dpe
+                else:
+                    d["D_PREM_ECH_FMT"] = "-"
 
             # Tri : les propositions "En attente" en premier
             priorite = {"EN_ATTENTE": 0, "REVISE": 1, "APPROUVE": 2, "GENERE": 3, "REJETE": 4}

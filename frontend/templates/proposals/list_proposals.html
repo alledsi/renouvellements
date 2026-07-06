@@ -51,9 +51,7 @@
           <tr>
             <th class="text-center">ID</th>
             <th>Client</th>
-            <th>Bureau</th>
             <th>Prêt Scoré</th>
-            <th>Score</th>
             <th class="text-center">Mt Proposé</th>
             <th class="text-center">Mt Accordé</th>
             <th class="text-center">Statut</th>
@@ -65,14 +63,16 @@
           {% for p in propositions %}
           <tr class="prop-row" data-cat="{{ p.CAT }}" data-id="{{ p.ID_PROPOSITION }}">
             <td>{{ p.ID_PROPOSITION }}</td>
-            <td><strong>{{ p.NOM_COMPLET }}</strong><br><small>{{ p.MATRICULE_CLIENT }}</small></td>
-            <td><small>{{ p.LIBELLE_BUREAU }}</small></td>
             <td>
-              <strong>{{ p.NO_PRET_SCORE }}</strong><br>
-              <small>Capital : {{ p.MT_PRET_ORIGINAL|floatformat:0|intcomma }} FCFA</small><br>
-              <small class="text-muted">Encours : {{ p.SOLDE_A_RACHETER|floatformat:0|intcomma }} FCFA</small>
+              <strong>{{ p.NOM_COMPLET }}</strong><br>
+              <small>{{ p.MATRICULE_CLIENT }}</small><br>
+              <small class="text-muted">{{ p.LIBELLE_BUREAU }}</small>
             </td>
-            <td>{{ p.SCORE_TOTAL }} %</td>
+            <td style="min-width: 190px;">
+              <strong>{{ p.NO_PRET_SCORE }} - {{ p.SCORE_TOTAL }} %</strong><br>
+              <small class="text-nowrap">Capital : {{ p.MT_PRET_ORIGINAL|floatformat:0|intcomma }} FCFA</small><br>
+              <small class="text-muted text-nowrap">Encours : {{ p.SOLDE_A_RACHETER|floatformat:0|intcomma }} FCFA</small>
+            </td>
             <td class="text-end"><small>{{ p.MT_PROPOSE|floatformat:0|intcomma }} FCFA</small></td>
             <td class="text-end">
               {% if p.MT_ACCORDE %}
@@ -116,7 +116,7 @@
 
           <!-- Ligne détail / décision -->
           <tr class="collapse detail-row" id="detail-{{ p.ID_PROPOSITION }}" data-cat="{{ p.CAT }}" data-parent="{{ p.ID_PROPOSITION }}">
-            <td colspan="10">
+            <td colspan="8">
               {% if p.STATUT_PROPOSITION == "EN_ATTENTE" or p.STATUT_PROPOSITION == None %}
               <!-- Formulaire de décision (uniquement pour les propositions en attente) -->
               <form method="POST" action="{% url 'decide_proposal' p.ID_PROPOSITION %}" class="p-3 border-top decision-form">
@@ -155,7 +155,7 @@
                 <div class="row g-3">
                   <div class="col-md-3"><small class="text-muted d-block">Décision</small><strong>{% if p.STATUT_PROPOSITION == "APPROUVE" %}Approuvée{% elif p.STATUT_PROPOSITION == "REJETE" %}Rejetée{% elif p.STATUT_PROPOSITION == "REVISE" %}Ajournée{% else %}En attente{% endif %}</strong></div>
                   <div class="col-md-3"><small class="text-muted d-block">Montant accordé</small><strong>{% if p.MT_ACCORDE %}{{ p.MT_ACCORDE|floatformat:0|intcomma }} FCFA{% else %}-{% endif %}</strong></div>
-                  <div class="col-md-3"><small class="text-muted d-block">1ère échéance</small><strong>{{ p.D_PREM_ECH|default:"-" }}</strong></div>
+                  <div class="col-md-3"><small class="text-muted d-block">1ère échéance</small><strong>{{ p.D_PREM_ECH_FMT }}</strong></div>
                   <div class="col-md-3"><small class="text-muted d-block">Prêt généré</small><strong>{% if p.PRET_GENERE == "Y" %}Oui{% else %}Non{% endif %}</strong></div>
                   <div class="col-12"><small class="text-muted d-block">Commentaire</small><strong>{{ p.COMMENTAIRE_DECISION|default:"-" }}</strong></div>
                 </div>
@@ -366,9 +366,20 @@ document.querySelectorAll("form.decision-form").forEach(form => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const submitter = e.submitter;
+    const statut = (submitter && submitter.name === "statut") ? submitter.value : null;
+
+    // Date de 1ère échéance obligatoire pour approuver
+    if (statut === "APPROUVE") {
+      const dateInput = form.querySelector('input[name="d_prem_ech"]');
+      if (!dateInput || !dateInput.value) {
+        showAlert("Veuillez indiquer la date de première échéance avant d'approuver.", "danger");
+        return;
+      }
+    }
+
     const fd = new FormData(form);
-    if (submitter && submitter.name === "statut") {
-      fd.append("statut", submitter.value);
+    if (statut) {
+      fd.append("statut", statut);
     }
 
     const buttons = form.querySelectorAll("button");
