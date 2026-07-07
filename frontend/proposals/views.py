@@ -154,12 +154,22 @@ def list_proposals(request):
 
     scores = [float(d["SCORE_TOTAL"]) for d in data if d.get("SCORE_TOTAL") is not None]
     decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
+    n = stats["total"]
+    total_capital = sum(float(d.get("MT_PRET_ORIGINAL") or 0) for d in data)
+    total_encours = sum(float(d.get("SOLDE_A_RACHETER") or 0) for d in data)
+    nb_accorde = sum(1 for d in data if d.get("MT_ACCORDE"))
     rapport = {
         "nb_bureaux": len(rapport_bureaux),
         "score_moyen": (sum(scores) / len(scores)) if scores else 0,
         "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
-        "taux_traitement": (decidees / stats["total"] * 100) if stats["total"] else 0,
-        "mt_moyen": (stats["mt_total"] / stats["total"]) if stats["total"] else 0,
+        "taux_traitement": (decidees / n * 100) if n else 0,
+        # Totaux
+        "total_capital": total_capital,
+        "total_encours": total_encours,
+        # Moyennes par dossier
+        "capital_moyen": (total_capital / n) if n else 0,
+        "montant_moyen_propose": (stats["mt_total"] / n) if n else 0,
+        "montant_moyen_accorde": (stats["mt_accorde"] / nb_accorde) if nb_accorde else 0,
     }
 
 

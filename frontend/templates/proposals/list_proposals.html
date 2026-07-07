@@ -186,47 +186,78 @@
   <div class="mt-5">
     <h4 class="fw-bold mb-3">Rapport d'analyse</h4>
 
-    <!-- KPI globaux -->
+    <!-- Groupe 1 : Totaux -->
+    <div class="text-muted small text-uppercase fw-semibold mb-2">Totaux (FCFA)</div>
     <div class="row g-3 mb-4">
-      <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="text-muted small text-uppercase">Total proposé</div>
-            <div class="fs-4 fw-bold">{{ stats.mt_total|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
-          </div>
-        </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Capital scoré</div>
+          <div class="fs-5 fw-bold">{{ rapport.total_capital|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
       </div>
-      <div class="col-md-3 col-6">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="text-muted small text-uppercase">Total accordé</div>
-            <div class="fs-4 fw-bold text-success">{{ stats.mt_accorde|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
-          </div>
-        </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Encours scoré</div>
+          <div class="fs-5 fw-bold">{{ rapport.total_encours|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="text-muted small text-uppercase">Taux d'accord</div>
-            <div class="fs-4 fw-bold">{{ rapport.taux_accord|floatformat:1 }} %</div>
-          </div>
-        </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Proposé</div>
+          <div class="fs-5 fw-bold">{{ stats.mt_total|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="text-muted small text-uppercase">Score moyen</div>
-            <div class="fs-4 fw-bold">{{ rapport.score_moyen|floatformat:1 }} %</div>
-          </div>
-        </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Accordé</div>
+          <div class="fs-5 fw-bold text-success">{{ stats.mt_accorde|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card border-0 shadow-sm h-100">
-          <div class="card-body">
-            <div class="text-muted small text-uppercase">Traitées</div>
-            <div class="fs-4 fw-bold">{{ rapport.taux_traitement|floatformat:0 }} %</div>
-          </div>
-        </div>
+    </div>
+
+    <!-- Groupe 2 : Moyennes par dossier -->
+    <div class="text-muted small text-uppercase fw-semibold mb-2">Moyennes par dossier</div>
+    <div class="row g-3 mb-4">
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Capital moyen</div>
+          <div class="fs-5 fw-bold">{{ rapport.capital_moyen|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Montant moyen proposé</div>
+          <div class="fs-5 fw-bold">{{ rapport.montant_moyen_propose|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Montant moyen accordé</div>
+          <div class="fs-5 fw-bold text-success">{{ rapport.montant_moyen_accorde|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+        </div></div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Score moyen</div>
+          <div class="fs-5 fw-bold">{{ rapport.score_moyen|floatformat:1 }} %</div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- Groupe 3 : Indicateurs -->
+    <div class="text-muted small text-uppercase fw-semibold mb-2">Indicateurs</div>
+    <div class="row g-3 mb-4">
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Taux d'accord</div>
+          <div class="fs-5 fw-bold">{{ rapport.taux_accord|floatformat:1 }} %</div>
+        </div></div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-6">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-muted small text-uppercase">Traitées</div>
+          <div class="fs-5 fw-bold">{{ rapport.taux_traitement|floatformat:0 }} %</div>
+        </div></div>
       </div>
     </div>
 
