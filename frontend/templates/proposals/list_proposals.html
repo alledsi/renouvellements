@@ -135,7 +135,7 @@
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">Date 1ère échéance</label>
-                    <input type="date" name="d_prem_ech" class="form-control">
+                    <input type="text" name="d_prem_ech" class="form-control flatpickr-echeance" placeholder="jj/mm/aaaa" autocomplete="off">
                   </div>
                   <div class="col-md-3">
                     <label class="form-label">Garanties</label>
@@ -305,7 +305,10 @@
 </div>
 
 {{ rapport_bureaux|json_script:"rapport-data" }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/fr.js"></script>
 <script>
 // ====== Onglets + recherche (côté client) ======
 let currentCat = "EN_ATTENTE";
@@ -356,6 +359,24 @@ document.querySelectorAll(".stat-card").forEach(card => {
 document.getElementById("searchInput").addEventListener("keyup", applyFilters);
 setTab("EN_ATTENTE");
 
+// ====== Calendrier échéance : uniquement le 10, 15 ou 20 du mois ======
+if (typeof flatpickr !== "undefined") {
+  flatpickr(".flatpickr-echeance", {
+    locale: "fr",
+    dateFormat: "Y-m-d",      // valeur envoyée au serveur (AAAA-MM-JJ)
+    altInput: true,
+    altFormat: "d/m/Y",       // affichage utilisateur (JJ/MM/AAAA)
+    disableMobile: true,
+    disable: [
+      function (date) {
+        // grise tous les jours sauf le 10, le 15 et le 20
+        const jour = date.getDate();
+        return jour !== 10 && jour !== 15 && jour !== 20;
+      }
+    ]
+  });
+}
+
 // ====== Alertes ======
 const alertPlaceholder = document.getElementById('alertPlaceholder');
 
@@ -402,8 +423,12 @@ document.querySelectorAll("form.decision-form").forEach(form => {
       try { result = await resp.json(); } catch (_) {}
 
       if (resp.ok && result.ok) {
-        showAlert(result.message || "Décision enregistrée.", "success");
-        setTimeout(() => window.location.reload(), 1800);
+        // Message affiché APRÈS le rechargement, avec les KPI à jour
+        sessionStorage.setItem("flashMessage", JSON.stringify({
+          type: "success",
+          text: result.message || "Décision enregistrée."
+        }));
+        window.location.reload();
       } else {
         showAlert(result.message || "Erreur lors de l'enregistrement de la décision.", "danger");
         buttons.forEach(b => b.disabled = false);
