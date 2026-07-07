@@ -9,23 +9,105 @@
     <p class="text-muted mb-0">Vue d'ensemble — toutes régions, tous bureaux</p>
   </div>
 
-  <!-- Répartition par statut -->
-  <div class="row g-2 mb-4">
-    <div class="col-md-2 col-6"><div class="card text-center border-primary"><div class="card-body py-2"><div class="text-primary fw-semibold small text-uppercase">Total</div><div class="fs-5 fw-bold lh-1">{{ stats.total }}</div><div class="small text-muted mt-1">{{ stats.mt_total|floatformat:0|intcomma }} FCFA</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-warning"><div class="card-body py-2"><div class="text-warning fw-semibold small text-uppercase">En attente</div><div class="fs-5 fw-bold lh-1">{{ stats.en_attente }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body py-2"><div class="text-success fw-semibold small text-uppercase">Approuvées</div><div class="fs-5 fw-bold lh-1">{{ stats.approuve }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body py-2"><div class="text-success fw-semibold small text-uppercase">Prêts générés</div><div class="fs-5 fw-bold lh-1">{{ stats.genere }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-info"><div class="card-body py-2"><div class="text-info fw-semibold small text-uppercase">Ajournées</div><div class="fs-5 fw-bold lh-1">{{ stats.revise }}</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card text-center border-danger"><div class="card-body py-2"><div class="text-danger fw-semibold small text-uppercase">Rejetées</div><div class="fs-5 fw-bold lh-1">{{ stats.rejete }}</div></div></div></div>
+  <style>
+    .stat-tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .stat-tile:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important; }
+    .kpi-card { border-left: 4px solid #adb5bd; }
+    .kpi-line { display:flex; justify-content:space-between; align-items:baseline; }
+    .grp-title { letter-spacing:.06em; }
+  </style>
+
+  <!-- Répartition par statut (nombre + montant) -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2 col-6"><div class="card text-center border-primary stat-tile h-100"><div class="card-body py-3"><div class="text-primary fw-semibold small text-uppercase">Total</div><div class="fs-4 fw-bold lh-1 my-1">{{ stats.total }}</div><div class="small text-muted">{{ stats.mt_total|floatformat:0|intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-warning stat-tile h-100"><div class="card-body py-3"><div class="text-warning fw-semibold small text-uppercase">En attente</div><div class="fs-4 fw-bold lh-1 my-1">{{ stats.en_attente }}</div><div class="small text-muted">{{ stats.mt_en_attente|floatformat:0|intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success stat-tile h-100"><div class="card-body py-3"><div class="text-success fw-semibold small text-uppercase">Approuvées</div><div class="fs-4 fw-bold lh-1 my-1">{{ stats.approuve }}</div><div class="small text-muted">{{ stats.mt_approuve|floatformat:0|intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success stat-tile h-100"><div class="card-body py-3"><div class="text-success fw-semibold small text-uppercase">Prêts générés</div><div class="fs-4 fw-bold lh-1 my-1">{{ stats.genere }}</div><div class="small text-muted">{{ stats.mt_genere|floatformat:0|intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-info stat-tile h-100"><div class="card-body py-3"><div class="text-info fw-semibold small text-uppercase">Ajournées</div><div class="fs-4 fw-bold lh-1 my-1">{{ stats.revise }}</div><div class="small text-muted">{{ stats.mt_revise|floatformat:0|intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-danger stat-tile h-100"><div class="card-body py-3"><div class="text-danger fw-semibold small text-uppercase">Rejetées</div><div class="fs-4 fw-bold lh-1 my-1">{{ stats.rejete }}</div><div class="small text-muted">{{ stats.mt_rejete|floatformat:0|intcomma }} FCFA</div></div></div></div>
   </div>
 
-  <!-- KPI globaux -->
+  <!-- ===== Scoring ===== -->
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis px-3 py-2 text-uppercase grp-title">Scoring</span>
+    <div class="flex-grow-1 border-bottom"></div>
+  </div>
   <div class="row g-3 mb-4">
-    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Total proposé</div><div class="fs-4 fw-bold">{{ stats.mt_total|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div></div></div></div>
-    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Total accordé</div><div class="fs-4 fw-bold text-success">{{ stats.mt_accorde|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Taux d'accord</div><div class="fs-4 fw-bold">{{ rapport.taux_accord|floatformat:1 }} %</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Score moyen</div><div class="fs-4 fw-bold">{{ rapport.score_moyen|floatformat:1 }} %</div></div></div></div>
-    <div class="col-md-2 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Traitées</div><div class="fs-4 fw-bold">{{ rapport.taux_traitement|floatformat:0 }} %</div></div></div></div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#6f42c1;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-2">Capital scoré</div>
+        <div class="kpi-line mb-1"><span class="text-muted small">Total</span><span class="fw-bold">{{ rapport.total_capital|floatformat:0|intcomma }} <span class="text-muted small">FCFA</span></span></div>
+        <div class="kpi-line"><span class="text-muted small">Moyen</span><span class="fw-bold">{{ rapport.capital_moyen|floatformat:0|intcomma }} <span class="text-muted small">FCFA</span></span></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#6f42c1;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-2">Encours scoré</div>
+        <div class="kpi-line mb-1"><span class="text-muted small">Total</span><span class="fw-bold">{{ rapport.total_encours|floatformat:0|intcomma }} <span class="text-muted small">FCFA</span></span></div>
+        <div class="kpi-line"><span class="text-muted small">Moyen</span><span class="fw-bold">{{ rapport.encours_moyen|floatformat:0|intcomma }} <span class="text-muted small">FCFA</span></span></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile d-flex" style="border-left-color:#6f42c1;"><div class="card-body d-flex flex-column justify-content-center">
+        <div class="text-muted small text-uppercase fw-semibold mb-1">Score moyen</div>
+        <div class="fs-3 fw-bold">{{ rapport.score_moyen|floatformat:1 }} %</div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ===== Proposé & Accordé ===== -->
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <span class="badge rounded-pill bg-info-subtle text-info-emphasis px-3 py-2 text-uppercase grp-title">Proposé &amp; Accordé</span>
+    <div class="flex-grow-1 border-bottom"></div>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#0d6efd;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-2">Total proposé</div>
+        <div class="kpi-line mb-1"><span class="text-muted small">Montant</span><span class="fw-bold">{{ stats.mt_total|floatformat:0|intcomma }} <span class="text-muted small">FCFA</span></span></div>
+        <div class="kpi-line"><span class="text-muted small">Nombre</span><span class="fw-bold">{{ stats.total }} dossiers</span></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#198754;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-2">Total accordé</div>
+        <div class="kpi-line mb-1"><span class="text-muted small">Montant</span><span class="fw-bold text-success">{{ stats.mt_accorde|floatformat:0|intcomma }} <span class="text-muted small">FCFA</span></span></div>
+        <div class="kpi-line"><span class="text-muted small">Nombre</span><span class="fw-bold">{{ rapport.nb_accorde }} dossiers</span></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#0dcaf0;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-2">Taux d'accord</div>
+        <div class="kpi-line mb-1"><span class="text-muted small">En montant</span><span class="fw-bold">{{ rapport.taux_accord|floatformat:1 }} %</span></div>
+        <div class="kpi-line"><span class="text-muted small">En nombre</span><span class="fw-bold">{{ rapport.taux_accord_nb|floatformat:1 }} %</span></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ===== Moyennes ===== -->
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <span class="badge rounded-pill bg-success-subtle text-success-emphasis px-3 py-2 text-uppercase grp-title">Moyennes</span>
+    <div class="flex-grow-1 border-bottom"></div>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#20c997;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-1">Proposé en moyenne</div>
+        <div class="fs-4 fw-bold">{{ rapport.montant_moyen_propose|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#20c997;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-1">Accordé en moyenne</div>
+        <div class="fs-4 fw-bold text-success">{{ rapport.montant_moyen_accorde|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div>
+      </div></div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100 kpi-card stat-tile" style="border-left-color:#20c997;"><div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold mb-1">% traité</div>
+        <div class="fs-4 fw-bold">{{ rapport.taux_traitement|floatformat:0 }} %</div>
+      </div></div>
+    </div>
   </div>
 
   <!-- Graphiques -->

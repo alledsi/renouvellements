@@ -347,6 +347,9 @@ def reporting_view(request):
         return sum(1 for d in data
                    if d.get("STATUT_PROPOSITION") == st and (gen is None or d.get("PRET_GENERE") == gen))
 
+    def mt(pred, field):
+        return sum(_num(d.get(field)) for d in data if pred(d))
+
     stats = {
         "total": n,
         "en_attente": cnt("EN_ATTENTE"),
@@ -356,12 +359,31 @@ def reporting_view(request):
         "revise": cnt("REVISE"),
         "mt_total": sum(_num(d.get("MT_PROPOSE")) for d in data),
         "mt_accorde": sum(_num(d.get("MT_ACCORDE")) for d in data),
+        "mt_en_attente": mt(lambda d: d.get("STATUT_PROPOSITION") == "EN_ATTENTE", "MT_PROPOSE"),
+        "mt_approuve": mt(lambda d: d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == "N", "MT_ACCORDE"),
+        "mt_genere": mt(lambda d: d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == "Y", "MT_ACCORDE"),
+        "mt_revise": mt(lambda d: d.get("STATUT_PROPOSITION") == "REVISE", "MT_PROPOSE"),
+        "mt_rejete": mt(lambda d: d.get("STATUT_PROPOSITION") == "REJETE", "MT_PROPOSE"),
     }
     scores = [_num(d.get("SCORE_TOTAL")) for d in data if d.get("SCORE_TOTAL") is not None]
     decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
+    total_capital = sum(_num(d.get("MT_PRET_ORIGINAL")) for d in data)
+    total_encours = sum(_num(d.get("SOLDE_A_RACHETER")) for d in data)
+    nb_accorde = sum(1 for d in data if d.get("MT_ACCORDE"))
     rapport = {
+        # Scoring
+        "total_capital": total_capital,
+        "capital_moyen": (total_capital / n) if n else 0,
+        "total_encours": total_encours,
+        "encours_moyen": (total_encours / n) if n else 0,
         "score_moyen": (sum(scores) / len(scores)) if scores else 0,
+        # Volumes proposé / accordé (montant + nombre)
+        "nb_accorde": nb_accorde,
         "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
+        "taux_accord_nb": (nb_accorde / n * 100) if n else 0,
+        # Moyennes
+        "montant_moyen_propose": (stats["mt_total"] / n) if n else 0,
+        "montant_moyen_accorde": (stats["mt_accorde"] / nb_accorde) if nb_accorde else 0,
         "taux_traitement": (decidees / n * 100) if n else 0,
     }
     return render(request, "proposals/reporting.html", {
