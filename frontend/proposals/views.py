@@ -14,6 +14,52 @@ from django.conf import settings
 # URL du backend FastAPI (définie dans settings.py via la variable d'env FASTAPI_URL)
 API_URL = settings.API_URL
 
+
+def is_reporter(user):
+    """Vrai si l'utilisateur appartient au groupe 'reporter'."""
+    return user.is_authenticated and user.groups.filter(name="reporter").exists()
+
+
+def _num(v):
+    try:
+        return float(v or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _aggregate_by(data, field):
+    """Agrège les propositions par un champ (région ou bureau)."""
+    from collections import defaultdict
+    agg = defaultdict(lambda: {
+        "nb": 0, "propose": 0.0, "accorde": 0.0, "capital": 0.0,
+        "encours": 0.0, "score_sum": 0.0, "score_n": 0, "en_attente": 0,
+    })
+    for d in data:
+        k = d.get(field) or "—"
+        a = agg[k]
+        a["nb"] += 1
+        a["propose"] += _num(d.get("MT_PROPOSE"))
+        a["accorde"] += _num(d.get("MT_ACCORDE"))
+        a["capital"] += _num(d.get("MT_PRET_ORIGINAL"))
+        a["encours"] += _num(d.get("SOLDE_A_RACHETER"))
+        sc = d.get("SCORE_TOTAL")
+        if sc is not None:
+            a["score_sum"] += _num(sc)
+            a["score_n"] += 1
+        if d.get("STATUT_PROPOSITION") == "EN_ATTENTE":
+            a["en_attente"] += 1
+    rows = []
+    for k, a in sorted(agg.items(), key=lambda kv: kv[1]["nb"], reverse=True):
+        rows.append({
+            "libelle": k, "nb": a["nb"],
+            "propose": a["propose"], "accorde": a["accorde"],
+            "capital": a["capital"], "encours": a["encours"],
+            "en_attente": a["en_attente"],
+            "score_moy": (a["score_sum"] / a["score_n"]) if a["score_n"] else 0,
+            "taux": (a["accorde"] / a["propose"] * 100) if a["propose"] else 0,
+        })
+    return rows
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('list_proposals')
@@ -41,6 +87,9 @@ def change_password(request):
 
 @login_required
 def list_proposals(request):
+    # Un reporter est dirigé vers la page de reporting global
+    if is_reporter(request.user):
+        return redirect("reporting")
     user = request.user.username
     url_verif = f"{API_URL}/proposals/verifier_utilisateur/{user}"
     try:
@@ -154,22 +203,12 @@ def list_proposals(request):
 
     scores = [float(d["SCORE_TOTAL"]) for d in data if d.get("SCORE_TOTAL") is not None]
     decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
-    n = stats["total"]
-    total_capital = sum(float(d.get("MT_PRET_ORIGINAL") or 0) for d in data)
-    total_encours = sum(float(d.get("SOLDE_A_RACHETER") or 0) for d in data)
-    nb_accorde = sum(1 for d in data if d.get("MT_ACCORDE"))
     rapport = {
         "nb_bureaux": len(rapport_bureaux),
         "score_moyen": (sum(scores) / len(scores)) if scores else 0,
         "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
-        "taux_traitement": (decidees / n * 100) if n else 0,
-        # Totaux
-        "total_capital": total_capital,
-        "total_encours": total_encours,
-        # Moyennes par dossier
-        "capital_moyen": (total_capital / n) if n else 0,
-        "montant_moyen_propose": (stats["mt_total"] / n) if n else 0,
-        "montant_moyen_accorde": (stats["mt_accorde"] / nb_accorde) if nb_accorde else 0,
+        "taux_traitement": (decidees / stats["total"] * 100) if stats["total"] else 0,
+        "mt_moyen": (stats["mt_total"] / stats["total"]) if stats["total"] else 0,
     }
 
 
@@ -279,3 +318,56 @@ def non_autorise_view(request):
     response = render(request, "non_autorise.html")
     response.status_code = 403
     return response
+
+
+@login_required
+def reporting_view(request):
+    """Page de reporting global (rôle reporter) : tous les renouvellements, toutes régions."""
+    if not is_reporter(request.user):
+        return redirect("list_proposals")
+
+    try:
+        resp = requests.get(f"{API_URL}/proposals/list/all", timeout=20)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        data = []
+        print("Erreur API list/all :", e)
+
+    for d in data:
+        st = d.get("STATUT_PROPOSITION")
+        if st == "APPROUVE":
+            d["CAT"] = "GENERE" if d.get("PRET_GENERE") == "Y" else "APPROUVE"
+        else:
+            d["CAT"] = st or "EN_ATTENTE"
+
+    n = len(data)
+
+    def cnt(st, gen=None):
+        return sum(1 for d in data
+                   if d.get("STATUT_PROPOSITION") == st and (gen is None or d.get("PRET_GENERE") == gen))
+
+    stats = {
+        "total": n,
+        "en_attente": cnt("EN_ATTENTE"),
+        "approuve": cnt("APPROUVE", "N"),
+        "genere": cnt("APPROUVE", "Y"),
+        "rejete": cnt("REJETE"),
+        "revise": cnt("REVISE"),
+        "mt_total": sum(_num(d.get("MT_PROPOSE")) for d in data),
+        "mt_accorde": sum(_num(d.get("MT_ACCORDE")) for d in data),
+    }
+    scores = [_num(d.get("SCORE_TOTAL")) for d in data if d.get("SCORE_TOTAL") is not None]
+    decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
+    rapport = {
+        "score_moyen": (sum(scores) / len(scores)) if scores else 0,
+        "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
+        "taux_traitement": (decidees / n * 100) if n else 0,
+    }
+    return render(request, "proposals/reporting.html", {
+        "stats": stats,
+        "rapport": rapport,
+        "rapport_regions": _aggregate_by(data, "LIB_REGION"),
+        "rapport_bureaux": _aggregate_by(data, "LIBELLE_BUREAU"),
+        "propositions": data,
+    })

@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+<div class="container pb-5" style="padding-bottom: 80px;">
+
+  <div class="mb-4">
+    <h2 class="fw-bold mb-1">Reporting global des renouvellements</h2>
+    <p class="text-muted mb-0">Vue d'ensemble — toutes régions, tous bureaux</p>
+  </div>
+
+  <!-- Répartition par statut -->
+  <div class="row g-2 mb-4">
+    <div class="col-md-2 col-6"><div class="card text-center border-primary"><div class="card-body py-2"><div class="text-primary fw-semibold small text-uppercase">Total</div><div class="fs-5 fw-bold lh-1">{{ stats.total }}</div><div class="small text-muted mt-1">{{ stats.mt_total|floatformat:0|intcomma }} FCFA</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-warning"><div class="card-body py-2"><div class="text-warning fw-semibold small text-uppercase">En attente</div><div class="fs-5 fw-bold lh-1">{{ stats.en_attente }}</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body py-2"><div class="text-success fw-semibold small text-uppercase">Approuvées</div><div class="fs-5 fw-bold lh-1">{{ stats.approuve }}</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-success"><div class="card-body py-2"><div class="text-success fw-semibold small text-uppercase">Prêts générés</div><div class="fs-5 fw-bold lh-1">{{ stats.genere }}</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-info"><div class="card-body py-2"><div class="text-info fw-semibold small text-uppercase">Ajournées</div><div class="fs-5 fw-bold lh-1">{{ stats.revise }}</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card text-center border-danger"><div class="card-body py-2"><div class="text-danger fw-semibold small text-uppercase">Rejetées</div><div class="fs-5 fw-bold lh-1">{{ stats.rejete }}</div></div></div></div>
+  </div>
+
+  <!-- KPI globaux -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Total proposé</div><div class="fs-4 fw-bold">{{ stats.mt_total|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div></div></div></div>
+    <div class="col-md-3 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Total accordé</div><div class="fs-4 fw-bold text-success">{{ stats.mt_accorde|floatformat:0|intcomma }} <span class="fs-6 text-muted">FCFA</span></div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Taux d'accord</div><div class="fs-4 fw-bold">{{ rapport.taux_accord|floatformat:1 }} %</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Score moyen</div><div class="fs-4 fw-bold">{{ rapport.score_moyen|floatformat:1 }} %</div></div></div></div>
+    <div class="col-md-2 col-6"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small text-uppercase">Traitées</div><div class="fs-4 fw-bold">{{ rapport.taux_traitement|floatformat:0 }} %</div></div></div></div>
+  </div>
+
+  <!-- Graphiques -->
+  <div class="row g-3 mb-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100"><div class="card-body">
+        <h6 class="fw-bold text-muted mb-3">Montants proposé vs accordé par région (FCFA)</h6>
+        <canvas id="chartRegions" height="160"></canvas>
+      </div></div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100"><div class="card-body">
+        <h6 class="fw-bold text-muted mb-3">Nombre de propositions par bureau</h6>
+        <canvas id="chartBureaux" height="160"></canvas>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- Détail par région -->
+  <h5 class="fw-bold mb-2">Par région</h5>
+  <div class="card shadow-sm mb-4">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Région</th>
+            <th class="text-center">Nb</th>
+            <th class="text-center">En attente</th>
+            <th class="text-end">Proposé</th>
+            <th class="text-end">Accordé</th>
+            <th class="text-center">Taux</th>
+            <th class="text-center">Score moyen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rapport_regions %}
+          <tr>
+            <td><strong>{{ r.libelle }}</strong></td>
+            <td class="text-center">{{ r.nb }}</td>
+            <td class="text-center">{% if r.en_attente %}<span class="badge bg-warning text-dark">{{ r.en_attente }}</span>{% else %}0{% endif %}</td>
+            <td class="text-end">{{ r.propose|floatformat:0|intcomma }}</td>
+            <td class="text-end">{{ r.accorde|floatformat:0|intcomma }}</td>
+            <td class="text-center">{{ r.taux|floatformat:1 }} %</td>
+            <td class="text-center">{{ r.score_moy|floatformat:1 }} %</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot class="table-light fw-bold">
+          <tr>
+            <td>Total</td>
+            <td class="text-center">{{ stats.total }}</td>
+            <td class="text-center">{{ stats.en_attente }}</td>
+            <td class="text-end">{{ stats.mt_total|floatformat:0|intcomma }}</td>
+            <td class="text-end">{{ stats.mt_accorde|floatformat:0|intcomma }}</td>
+            <td class="text-center">{{ rapport.taux_accord|floatformat:1 }} %</td>
+            <td class="text-center">{{ rapport.score_moyen|floatformat:1 }} %</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Détail par bureau -->
+  <h5 class="fw-bold mb-2">Par bureau</h5>
+  <div class="card shadow-sm mb-4">
+    <div class="table-responsive" style="max-height: 360px; overflow:auto;">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light" style="position: sticky; top:0; z-index:2;">
+          <tr>
+            <th>Bureau</th>
+            <th class="text-center">Nb</th>
+            <th class="text-center">En attente</th>
+            <th class="text-end">Proposé</th>
+            <th class="text-end">Accordé</th>
+            <th class="text-center">Taux</th>
+            <th class="text-center">Score moyen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in rapport_bureaux %}
+          <tr>
+            <td><strong>{{ b.libelle }}</strong></td>
+            <td class="text-center">{{ b.nb }}</td>
+            <td class="text-center">{% if b.en_attente %}<span class="badge bg-warning text-dark">{{ b.en_attente }}</span>{% else %}0{% endif %}</td>
+            <td class="text-end">{{ b.propose|floatformat:0|intcomma }}</td>
+            <td class="text-end">{{ b.accorde|floatformat:0|intcomma }}</td>
+            <td class="text-center">{{ b.taux|floatformat:1 }} %</td>
+            <td class="text-center">{{ b.score_moy|floatformat:1 }} %</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tableau complet des renouvellements -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="fw-bold mb-0">Tous les renouvellements ({{ stats.total }})</h5>
+    <input id="searchInput" class="form-control w-auto" style="min-width: 260px;" placeholder="Rechercher région, bureau, client...">
+  </div>
+  <div class="card shadow">
+    <div class="d-block overflow-auto" style="max-height: 520px;">
+      <table class="table align-middle table-hover mb-0" id="renouvTable">
+        <thead class="table-dark" style="position: sticky; top:0; z-index:2;">
+          <tr>
+            <th>ID</th>
+            <th>Région</th>
+            <th>Bureau</th>
+            <th>Client</th>
+            <th>Prêt Scoré</th>
+            <th class="text-end">Proposé</th>
+            <th class="text-end">Accordé</th>
+            <th class="text-center">Statut</th>
+            <th class="text-center">Généré ?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in propositions %}
+          <tr>
+            <td>{{ p.ID_PROPOSITION }}</td>
+            <td><small>{{ p.LIB_REGION }}</small></td>
+            <td><small>{{ p.LIBELLE_BUREAU }}</small></td>
+            <td><strong>{{ p.NOM_COMPLET }}</strong><br><small>{{ p.MATRICULE_CLIENT }}</small></td>
+            <td>
+              <strong>{{ p.NO_PRET_SCORE }} - {{ p.SCORE_TOTAL }} %</strong><br>
+              <small class="text-nowrap">Capital : {{ p.MT_PRET_ORIGINAL|floatformat:0|intcomma }} FCFA</small><br>
+              <small class="text-muted text-nowrap">Encours : {{ p.SOLDE_A_RACHETER|floatformat:0|intcomma }} FCFA</small>
+            </td>
+            <td class="text-end"><small>{{ p.MT_PROPOSE|floatformat:0|intcomma }} FCFA</small></td>
+            <td class="text-end">{% if p.MT_ACCORDE %}<small>{{ p.MT_ACCORDE|floatformat:0|intcomma }} FCFA</small>{% else %}-{% endif %}</td>
+            <td class="text-center">
+              {% if p.STATUT_PROPOSITION == "APPROUVE" %}<span class="badge bg-success">Approuvée</span>
+              {% elif p.STATUT_PROPOSITION == "REJETE" %}<span class="badge bg-danger">Rejetée</span>
+              {% elif p.STATUT_PROPOSITION == "REVISE" %}<span class="badge bg-info text-dark">Ajournée</span>
+              {% else %}<span class="badge bg-warning text-dark">En attente</span>{% endif %}
+            </td>
+            <td class="text-center">
+              {% if p.PRET_GENERE == "Y" %}<span class="badge bg-success">OUI</span>
+              {% elif p.PRET_GENERE == "N" %}<span class="badge bg-danger">NON</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="emptyState" class="text-center text-muted py-4" style="display:none;">Aucun résultat.</div>
+  </div>
+
+  <div class="text-center mt-5 mb-4">
+    <img src="{% static 'images/ScorFlowlarge.png' %}" alt="ScorFlow" style="max-width: 240px; width: 55%; height: auto;">
+  </div>
+</div>
+
+{{ rapport_regions|json_script:"regions-data" }}
+{{ rapport_bureaux|json_script:"bureaux-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+// Recherche dans le tableau complet
+const searchInput = document.getElementById("searchInput");
+if (searchInput) {
+  searchInput.addEventListener("keyup", function () {
+    const f = this.value.toLowerCase();
+    let visible = 0;
+    document.querySelectorAll("#renouvTable tbody tr").forEach(tr => {
+      const show = tr.textContent.toLowerCase().includes(f);
+      tr.style.display = show ? "" : "none";
+      if (show) visible++;
+    });
+    document.getElementById("emptyState").style.display = visible === 0 ? "" : "none";
+  });
+}
+
+// Graphiques
+(function () {
+  if (typeof Chart === "undefined") return;
+  const fmt = v => new Intl.NumberFormat('fr-FR').format(Math.round(v));
+  function read(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    try { return JSON.parse(el.textContent); } catch (_) { return []; }
+  }
+
+  const reg = read("regions-data");
+  const cr = document.getElementById("chartRegions");
+  if (cr && reg.length) {
+    new Chart(cr, {
+      type: "bar",
+      data: {
+        labels: reg.map(d => d.libelle),
+        datasets: [
+          { label: "Proposé", data: reg.map(d => d.propose), backgroundColor: "#0d6efd" },
+          { label: "Accordé", data: reg.map(d => d.accorde), backgroundColor: "#198754" }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "top" }, tooltip: { callbacks: { label: c => c.dataset.label + " : " + fmt(c.parsed.y) + " FCFA" } } },
+        scales: { y: { beginAtZero: true, ticks: { callback: v => fmt(v) } } }
+      }
+    });
+  }
+
+  const bur = read("bureaux-data");
+  const cb = document.getElementById("chartBureaux");
+  if (cb && bur.length) {
+    new Chart(cb, {
+      type: "bar",
+      data: {
+        labels: bur.map(d => d.libelle),
+        datasets: [{ label: "Propositions", data: bur.map(d => d.nb), backgroundColor: "#6f42c1" }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true } }
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

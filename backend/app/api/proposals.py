@@ -56,6 +56,7 @@ class ProposalOutAll(BaseModel):
     ID_PROPOSITION: Optional[int]
     NO_PRET_SCORE: Optional[int]
     MT_PRET_ORIGINAL: Optional[float]
+    SOLDE_A_RACHETER: Optional[float]
     REF_COMITE: Optional[str]
     STATUT_PROPOSITION: Optional[str]
     MATRICULE_CLIENT: Optional[str]
@@ -240,7 +241,8 @@ def list_proposals_all():
             v.USER_GENERATION,
             v.DATE_GENERATION,
             v.JOURS_DECISION_GENERATION,
-            r.LIB_REGION
+            r.LIB_REGION,
+            v.SOLDE_A_RACHETER
         FROM V_RENOUVELLEMENT v
         LEFT JOIN REGION r
         ON TRIM(v.CODE_REGION) = TRIM(r.CODE_REGION)
@@ -279,7 +281,8 @@ def list_proposals_all():
             USER_GENERATION = safe(r[20]),
             DATE_GENERATION = safe(r[21]),
             JOURS_DECISION_GENERATION = safe(r[22]),
-            LIB_REGION = safe(r[23])
+            LIB_REGION = safe(r[23]),
+            SOLDE_A_RACHETER = safe(r[24])
         ) for r in rows ]
         print("✅ Nombre de lignes :", len(result))
         return result
