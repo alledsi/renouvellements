@@ -6,7 +6,7 @@
 
   <div class="mb-4">
     <h2 class="fw-bold mb-1">Reporting global des renouvellements</h2>
-    <p class="text-muted mb-0">Vue d'ensemble — toutes régions, tous bureaux</p>
+    <p class="text-muted mb-0">Vue d'ensemble — toutes agences, tous bureaux</p>
   </div>
 
   <style>
@@ -114,26 +114,27 @@
   <div class="row g-3 mb-4">
     <div class="col-lg-6">
       <div class="card shadow-sm h-100"><div class="card-body">
-        <h6 class="fw-bold text-muted mb-3">Montants proposé vs accordé par région (FCFA)</h6>
+        <h6 class="fw-bold text-muted mb-3">Montants proposé vs accordé par Agence (FCFA)</h6>
         <canvas id="chartRegions" height="160"></canvas>
       </div></div>
     </div>
     <div class="col-lg-6">
       <div class="card shadow-sm h-100"><div class="card-body">
-        <h6 class="fw-bold text-muted mb-3">Nombre de propositions par bureau</h6>
+        <h6 class="fw-bold text-muted mb-3">Score moyen par Agence (%)</h6>
         <canvas id="chartBureaux" height="160"></canvas>
       </div></div>
     </div>
   </div>
 
-  <!-- Détail par région -->
-  <h5 class="fw-bold mb-2">Par région</h5>
+  <!-- Détail par agence -->
+  <h5 class="fw-bold mb-2">Par Agence</h5>
   <div class="card shadow-sm mb-4">
     <div class="table-responsive">
-      <table class="table table-sm table-hover align-middle mb-0">
+      <table class="table table-sm table-hover align-middle mb-0" style="table-layout:fixed;">
+        <colgroup><col style="width:32%"><col style="width:8%"><col style="width:13%"><col style="width:16%"><col style="width:16%"><col style="width:7.5%"><col style="width:7.5%"></colgroup>
         <thead class="table-light">
           <tr>
-            <th>Région</th>
+            <th>Agence</th>
             <th class="text-center">Nb</th>
             <th class="text-center">En attente</th>
             <th class="text-end">Proposé</th>
@@ -171,10 +172,11 @@
   </div>
 
   <!-- Détail par bureau -->
-  <h5 class="fw-bold mb-2">Par bureau</h5>
+  <h5 class="fw-bold mb-2">Par Bureau</h5>
   <div class="card shadow-sm mb-4">
     <div class="table-responsive" style="max-height: 360px; overflow:auto;">
-      <table class="table table-sm table-hover align-middle mb-0">
+      <table class="table table-sm table-hover align-middle mb-0" style="table-layout:fixed;">
+        <colgroup><col style="width:32%"><col style="width:8%"><col style="width:13%"><col style="width:16%"><col style="width:16%"><col style="width:7.5%"><col style="width:7.5%"></colgroup>
         <thead class="table-light" style="position: sticky; top:0; z-index:2;">
           <tr>
             <th>Bureau</th>
@@ -204,9 +206,17 @@
   </div>
 
   <!-- Tableau complet des renouvellements -->
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h5 class="fw-bold mb-0">Tous les renouvellements ({{ stats.total }})</h5>
-    <input id="searchInput" class="form-control w-auto" style="min-width: 260px;" placeholder="Rechercher région, bureau, client...">
+  <h5 class="fw-bold mb-2">Tous les renouvellements ({{ stats.total }})</h5>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <ul class="nav nav-pills flex-wrap" id="statusTabs">
+      <li class="nav-item"><button type="button" class="nav-link status-tab" data-cat="TOUS">Tous <span class="badge bg-secondary ms-1">{{ stats.total }}</span></button></li>
+      <li class="nav-item"><button type="button" class="nav-link status-tab" data-cat="EN_ATTENTE">En attente <span class="badge bg-warning text-dark ms-1">{{ stats.en_attente }}</span></button></li>
+      <li class="nav-item"><button type="button" class="nav-link status-tab" data-cat="APPROUVE">Approuvées <span class="badge bg-success ms-1">{{ stats.approuve }}</span></button></li>
+      <li class="nav-item"><button type="button" class="nav-link status-tab" data-cat="GENERE">Prêts générés <span class="badge bg-success ms-1">{{ stats.genere }}</span></button></li>
+      <li class="nav-item"><button type="button" class="nav-link status-tab" data-cat="REVISE">Ajournées <span class="badge bg-info text-dark ms-1">{{ stats.revise }}</span></button></li>
+      <li class="nav-item"><button type="button" class="nav-link status-tab" data-cat="REJETE">Rejetées <span class="badge bg-danger ms-1">{{ stats.rejete }}</span></button></li>
+    </ul>
+    <input id="searchInput" class="form-control w-auto" style="min-width: 260px;" placeholder="Rechercher agence, bureau, client...">
   </div>
   <div class="card shadow">
     <div class="d-block overflow-auto" style="max-height: 520px;">
@@ -214,8 +224,7 @@
         <thead class="table-dark" style="position: sticky; top:0; z-index:2;">
           <tr>
             <th>ID</th>
-            <th>Région</th>
-            <th>Bureau</th>
+            <th>Agence</th>
             <th>Client</th>
             <th>Prêt Scoré</th>
             <th class="text-end">Proposé</th>
@@ -226,11 +235,14 @@
         </thead>
         <tbody>
           {% for p in propositions %}
-          <tr>
+          <tr class="prop-row" data-cat="{{ p.CAT }}">
             <td>{{ p.ID_PROPOSITION }}</td>
             <td><small>{{ p.LIB_REGION }}</small></td>
-            <td><small>{{ p.LIBELLE_BUREAU }}</small></td>
-            <td><strong>{{ p.NOM_COMPLET }}</strong><br><small>{{ p.MATRICULE_CLIENT }}</small></td>
+            <td>
+              <strong>{{ p.NOM_COMPLET }}</strong><br>
+              <small>{{ p.MATRICULE_CLIENT }}</small><br>
+              <small class="text-muted">{{ p.LIBELLE_BUREAU }}</small>
+            </td>
             <td>
               <strong>{{ p.NO_PRET_SCORE }} - {{ p.SCORE_TOTAL }} %</strong><br>
               <small class="text-nowrap">Capital : {{ p.MT_PRET_ORIGINAL|floatformat:0|intcomma }} FCFA</small><br>
@@ -265,20 +277,28 @@
 {{ rapport_bureaux|json_script:"bureaux-data" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-// Recherche dans le tableau complet
-const searchInput = document.getElementById("searchInput");
-if (searchInput) {
-  searchInput.addEventListener("keyup", function () {
-    const f = this.value.toLowerCase();
-    let visible = 0;
-    document.querySelectorAll("#renouvTable tbody tr").forEach(tr => {
-      const show = tr.textContent.toLowerCase().includes(f);
-      tr.style.display = show ? "" : "none";
-      if (show) visible++;
-    });
-    document.getElementById("emptyState").style.display = visible === 0 ? "" : "none";
+// ===== Onglets (statut) + recherche =====
+let currentCat = "TOUS";
+function applyFilters() {
+  const f = (document.getElementById("searchInput").value || "").toLowerCase();
+  let visible = 0;
+  document.querySelectorAll("#renouvTable tbody tr.prop-row").forEach(tr => {
+    const matchCat = (currentCat === "TOUS") || (tr.dataset.cat === currentCat);
+    const matchText = tr.textContent.toLowerCase().includes(f);
+    const show = matchCat && matchText;
+    tr.style.display = show ? "" : "none";
+    if (show) visible++;
   });
+  document.getElementById("emptyState").style.display = visible === 0 ? "" : "none";
 }
+function setTab(cat) {
+  currentCat = cat;
+  document.querySelectorAll(".status-tab").forEach(t => t.classList.toggle("active", t.dataset.cat === cat));
+  applyFilters();
+}
+document.querySelectorAll(".status-tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.cat)));
+document.getElementById("searchInput").addEventListener("keyup", applyFilters);
+setTab("TOUS");
 
 // Graphiques
 (function () {
@@ -310,20 +330,19 @@ if (searchInput) {
     });
   }
 
-  const bur = read("bureaux-data");
   const cb = document.getElementById("chartBureaux");
-  if (cb && bur.length) {
+  if (cb && reg.length) {
     new Chart(cb, {
       type: "bar",
       data: {
-        labels: bur.map(d => d.libelle),
-        datasets: [{ label: "Propositions", data: bur.map(d => d.nb), backgroundColor: "#6f42c1" }]
+        labels: reg.map(d => d.libelle),
+        datasets: [{ label: "Score moyen (%)", data: reg.map(d => d.score_moy), backgroundColor: "#6f42c1" }]
       },
       options: {
         indexAxis: "y",
         responsive: true,
         plugins: { legend: { display: false } },
-        scales: { x: { beginAtZero: true } }
+        scales: { x: { beginAtZero: true, max: 100 } }
       }
     });
   }
