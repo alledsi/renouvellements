@@ -371,11 +371,17 @@ setTab("TOUS");
       },
       options: {
         responsive: true,
+        interaction: { mode: "index", intersect: false },
         plugins: {
           legend: { position: "top" },
           tooltip: {
+            mode: "index",
+            intersect: false,
+            displayColors: false,
             callbacks: {
+              title: items => items.length ? items[0].label : "",
               label: function (c) {
+                if (c.datasetIndex !== 0) return null;
                 const d = reg[c.dataIndex];
                 const traite = d.nb - d.en_attente;
                 const pct = d.nb ? Math.round(traite / d.nb * 100) : 0;
