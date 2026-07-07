@@ -21,14 +21,12 @@ def login_view(request):
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         login(request, user)
-        messages.success(request, f"Bienvenue {user.username} 👋")
         return redirect('list_proposals')
     return render(request, 'auth/login.html', {'form': form})
 
 @login_required
 def logout_view(request):
     logout(request)
-    messages.info(request, "Déconnexion réussie ✅")
     return redirect('login')
 
 @login_required
