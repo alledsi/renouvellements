@@ -2,6 +2,13 @@
 {% load static %}
 {% load humanize %}
 {% block content %}
+<div id="loadingOverlay" style="display:none; position:fixed; inset:0; z-index:1080; background:rgba(255,255,255,0.75);">
+  <div class="d-flex flex-column justify-content-center align-items-center h-100">
+    <div class="spinner-border text-success" style="width:3.5rem; height:3.5rem;" role="status"></div>
+    <div class="mt-3 fs-5 fw-semibold text-success">Génération en cours…</div>
+    <div class="text-muted">Veuillez patienter</div>
+  </div>
+</div>
 <div class="container pb-5" style="padding-bottom: 80px;">
 
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -408,15 +415,29 @@ document.querySelectorAll("form.decision-form").forEach(form => {
   });
 });
 
+// ====== Message en attente après un rechargement (KPI à jour + succès ensemble) ======
+(function () {
+  const raw = sessionStorage.getItem("flashMessage");
+  if (!raw) return;
+  sessionStorage.removeItem("flashMessage");
+  try {
+    const m = JSON.parse(raw);
+    showAlert(m.text, m.type || "success");
+  } catch (_) {}
+})();
+
 // ====== Génération des prêts approuvés ======
 const btn = document.getElementById('generatePretsBtn');
+const loadingOverlay = document.getElementById('loadingOverlay');
 if (btn) {
   btn.addEventListener('click', async () => {
     if (!confirm("Confirmer la génération de tous les prêts approuvés ?")) return;
 
+    const label = btn.innerHTML;
     btn.disabled = true;
-    const label = btn.innerText;
-    btn.innerText = "Génération en cours...";
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Génération en cours…';
+    if (loadingOverlay) loadingOverlay.style.display = "block";
+    const start = Date.now();
 
     try {
       const response = await fetch("{% url 'generer_prets' %}", {
@@ -427,18 +448,26 @@ if (btn) {
       try { result = await response.json(); } catch (_) {}
 
       if (response.ok && result.ok) {
-        showAlert(result.message || "Prêts générés avec succès.", "success");
-        setTimeout(() => window.location.reload(), 3000);
+        // On garde le voile, on affichera le succès APRÈS le rechargement
+        sessionStorage.setItem("flashMessage", JSON.stringify({
+          type: "success",
+          text: result.message || "Prêts générés avec succès."
+        }));
+        // Durée minimale de chargement (~1,5 s) puis rechargement -> KPI à jour
+        const wait = Math.max(0, 1500 - (Date.now() - start));
+        setTimeout(() => window.location.reload(), wait);
       } else {
+        if (loadingOverlay) loadingOverlay.style.display = "none";
         showAlert(result.message || "Une erreur est survenue.", "danger");
         btn.disabled = false;
-        btn.innerText = label;
+        btn.innerHTML = label;
       }
     } catch (error) {
       console.error("Erreur API:", error);
+      if (loadingOverlay) loadingOverlay.style.display = "none";
       showAlert("Erreur réseau : " + error.message, "danger");
       btn.disabled = false;
-      btn.innerText = label;
+      btn.innerHTML = label;
     }
   });
 }
