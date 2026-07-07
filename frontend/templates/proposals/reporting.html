@@ -126,6 +126,16 @@
     </div>
   </div>
 
+  <!-- Progression du traitement par agence (pleine largeur) -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm"><div class="card-body">
+        <h6 class="fw-bold text-muted mb-3">Propositions et progression du traitement par Agence</h6>
+        <canvas id="chartTraiteAgence" height="90"></canvas>
+      </div></div>
+    </div>
+  </div>
+
   <!-- Détail par agence -->
   <h5 class="fw-bold mb-2">Par Agence</h5>
   <div class="card shadow-sm mb-4">
@@ -343,6 +353,38 @@ setTab("TOUS");
         responsive: true,
         plugins: { legend: { display: false } },
         scales: { x: { beginAtZero: true, max: 100 } }
+      }
+    });
+  }
+
+  // Barres verticales empilées : progression du traitement par agence
+  const ct = document.getElementById("chartTraiteAgence");
+  if (ct && reg.length) {
+    new Chart(ct, {
+      type: "bar",
+      data: {
+        labels: reg.map(d => d.libelle),
+        datasets: [
+          { label: "Traité", data: reg.map(d => d.nb - d.en_attente), backgroundColor: "#198754", stack: "s" },
+          { label: "En attente", data: reg.map(d => d.en_attente), backgroundColor: "#dee2e6", stack: "s" }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "top" },
+          tooltip: {
+            callbacks: {
+              label: function (c) {
+                const d = reg[c.dataIndex];
+                const traite = d.nb - d.en_attente;
+                const pct = d.nb ? Math.round(traite / d.nb * 100) : 0;
+                return ["Propositions : " + d.nb, "Traité : " + traite, "% traité : " + pct + " %"];
+              }
+            }
+          }
+        },
+        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
       }
     });
   }
