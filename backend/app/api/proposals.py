@@ -124,6 +124,84 @@ def verifier_utilisateur(username: str):
         cursor.close()
         conn.close()
 
+
+@router.get("/verifier_matricule/{username}")
+def verifier_matricule(username: str):
+    """
+    Vérifie la simple existence d'un matricule dans EVUTI (sans filtre de service ni
+    d'activité) et renvoie son agence. Utilisé pour les rôles reporter et chef d'agence.
+    """
+    sql = """
+        SELECT CODE_REGION, LIB_REGION FROM (
+            SELECT e.CODE_REGION, r.LIB_REGION
+            FROM EVUTI e
+            LEFT JOIN REGION r ON TRIM(e.CODE_REGION) = TRIM(r.CODE_REGION)
+            WHERE e.CUTI = :cuti
+        ) WHERE ROWNUM = 1
+    """
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(sql, {"cuti": username})
+        row = cur.fetchone()
+        if row:
+            return {"existe": True, "code_region": row[0], "lib_region": row[1]}
+        return {"existe": False}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+
+@router.get("/region/{code_region}", response_model=List[ProposalOut])
+def list_proposals_region(code_region: str):
+    """Propositions d'une agence donnée (par CODE_REGION). Utilisé par le chef d'agence."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        sql = """
+        SELECT
+            CODE_REGION, ID_PROPOSITION, NO_PRET_SCORE, MT_PRET_ORIGINAL,
+            REF_COMITE, STATUT_PROPOSITION, MATRICULE_CLIENT, NOM_COMPLET,
+            CODE_BUREAU, LIBELLE_BUREAU, SCORE_TOTAL, MT_PROPOSE, MT_ACCORDE,
+            D_PREM_ECH, DATE_DECISION, COMMENTAIRE_DECISION, GENERER_GARANTIES,
+            PRET_GENERE, USER_PROPOSITION, DATE_PROPOSITION, USER_GENERATION,
+            DATE_GENERATION, JOURS_DECISION_GENERATION, SOLDE_A_RACHETER
+        FROM V_RENOUVELLEMENT
+        WHERE TRIM(CODE_REGION) = TRIM(:code_region)
+        """
+        cur.execute(sql, {"code_region": code_region})
+
+        def safe(val):
+            if val is None:
+                return None
+            if isinstance(val, (datetime.datetime, datetime.date)):
+                return val.isoformat()
+            if isinstance(val, decimal.Decimal):
+                return float(val)
+            return val
+
+        rows = cur.fetchall()
+        result = [dict(
+            CODE_REGION=safe(r[0]), ID_PROPOSITION=safe(r[1]), NO_PRET_SCORE=safe(r[2]),
+            MT_PRET_ORIGINAL=safe(r[3]), REF_COMITE=safe(r[4]), STATUT_PROPOSITION=safe(r[5]),
+            MATRICULE_CLIENT=safe(r[6]), NOM_COMPLET=safe(r[7]), CODE_BUREAU=safe(r[8]),
+            LIBELLE_BUREAU=safe(r[9]), SCORE_TOTAL=safe(r[10]), MT_PROPOSE=safe(r[11]),
+            MT_ACCORDE=safe(r[12]), D_PREM_ECH=safe(r[13]), DATE_DECISION=safe(r[14]),
+            COMMENTAIRE_DECISION=safe(r[15]), GENERER_GARANTIES=safe(r[16]), PRET_GENERE=safe(r[17]),
+            USER_PROPOSITION=safe(r[18]), DATE_PROPOSITION=safe(r[19]), USER_GENERATION=safe(r[20]),
+            DATE_GENERATION=safe(r[21]), JOURS_DECISION_GENERATION=safe(r[22]), SOLDE_A_RACHETER=safe(r[23]),
+        ) for r in rows]
+        print("✅ Propositions agence :", len(result))
+        return result
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erreur Oracle : {e}")
+    finally:
+        conn.close()
+
+
 @router.get("/{user}", response_model=List[ProposalOut])
 def list_proposals(user: str):
     conn = get_conn()

@@ -20,6 +20,22 @@ def is_reporter(user):
     return user.is_authenticated and user.groups.filter(name="reporter").exists()
 
 
+def is_chef_agence(user):
+    """Vrai si l'utilisateur appartient au groupe 'chef d'agence'."""
+    return user.is_authenticated and user.groups.filter(name="chef d'agence").exists()
+
+
+def _verifier_matricule(username):
+    """Vérifie l'existence du matricule dans EVUTI. Renvoie {existe, code_region, lib_region}."""
+    try:
+        r = requests.get(f"{API_URL}/proposals/verifier_matricule/{username}", timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        print("Erreur verifier_matricule:", e)
+        return {"existe": False}
+
+
 def _num(v):
     try:
         return float(v or 0)
@@ -60,6 +76,53 @@ def _aggregate_by(data, field):
         })
     return rows
 
+
+def _build_stats_rapport(data):
+    """Calcule les statistiques et le rapport (KPI) à partir d'une liste de propositions."""
+    n = len(data)
+
+    def cnt(st, gen=None):
+        return sum(1 for d in data
+                   if d.get("STATUT_PROPOSITION") == st and (gen is None or d.get("PRET_GENERE") == gen))
+
+    def mt(pred, field):
+        return sum(_num(d.get(field)) for d in data if pred(d))
+
+    stats = {
+        "total": n,
+        "en_attente": cnt("EN_ATTENTE"),
+        "approuve": cnt("APPROUVE", "N"),
+        "genere": cnt("APPROUVE", "Y"),
+        "rejete": cnt("REJETE"),
+        "revise": cnt("REVISE"),
+        "mt_total": sum(_num(d.get("MT_PROPOSE")) for d in data),
+        "mt_accorde": sum(_num(d.get("MT_ACCORDE")) for d in data),
+        "mt_en_attente": mt(lambda d: d.get("STATUT_PROPOSITION") == "EN_ATTENTE", "MT_PROPOSE"),
+        "mt_approuve": mt(lambda d: d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == "N", "MT_ACCORDE"),
+        "mt_genere": mt(lambda d: d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == "Y", "MT_ACCORDE"),
+        "mt_revise": mt(lambda d: d.get("STATUT_PROPOSITION") == "REVISE", "MT_PROPOSE"),
+        "mt_rejete": mt(lambda d: d.get("STATUT_PROPOSITION") == "REJETE", "MT_PROPOSE"),
+    }
+    scores = [_num(d.get("SCORE_TOTAL")) for d in data if d.get("SCORE_TOTAL") is not None]
+    decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
+    total_capital = sum(_num(d.get("MT_PRET_ORIGINAL")) for d in data)
+    total_encours = sum(_num(d.get("SOLDE_A_RACHETER")) for d in data)
+    nb_accorde = sum(1 for d in data if d.get("MT_ACCORDE"))
+    rapport = {
+        "total_capital": total_capital,
+        "capital_moyen": (total_capital / n) if n else 0,
+        "total_encours": total_encours,
+        "encours_moyen": (total_encours / n) if n else 0,
+        "score_moyen": (sum(scores) / len(scores)) if scores else 0,
+        "nb_accorde": nb_accorde,
+        "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
+        "taux_accord_nb": (nb_accorde / n * 100) if n else 0,
+        "montant_moyen_propose": (stats["mt_total"] / n) if n else 0,
+        "montant_moyen_accorde": (stats["mt_accorde"] / nb_accorde) if nb_accorde else 0,
+        "taux_traitement": (decidees / n * 100) if n else 0,
+    }
+    return stats, rapport
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('list_proposals')
@@ -87,9 +150,11 @@ def change_password(request):
 
 @login_required
 def list_proposals(request):
-    # Un reporter est dirigé vers la page de reporting global
+    # Aiguillage par rôle : reporter (global) puis chef d'agence (son agence)
     if is_reporter(request.user):
         return redirect("reporting")
+    if is_chef_agence(request.user):
+        return redirect("reporting_agence")
     user = request.user.username
     url_verif = f"{API_URL}/proposals/verifier_utilisateur/{user}"
     try:
@@ -326,6 +391,10 @@ def reporting_view(request):
     if not is_reporter(request.user):
         return redirect("list_proposals")
 
+    # Le matricule doit exister dans EVUTI, sinon accès refusé
+    if not _verifier_matricule(request.user.username).get("existe"):
+        return redirect("/non_autorise/")
+
     try:
         resp = requests.get(f"{API_URL}/proposals/list/all", timeout=20)
         resp.raise_for_status()
@@ -341,55 +410,48 @@ def reporting_view(request):
         else:
             d["CAT"] = st or "EN_ATTENTE"
 
-    n = len(data)
-
-    def cnt(st, gen=None):
-        return sum(1 for d in data
-                   if d.get("STATUT_PROPOSITION") == st and (gen is None or d.get("PRET_GENERE") == gen))
-
-    def mt(pred, field):
-        return sum(_num(d.get(field)) for d in data if pred(d))
-
-    stats = {
-        "total": n,
-        "en_attente": cnt("EN_ATTENTE"),
-        "approuve": cnt("APPROUVE", "N"),
-        "genere": cnt("APPROUVE", "Y"),
-        "rejete": cnt("REJETE"),
-        "revise": cnt("REVISE"),
-        "mt_total": sum(_num(d.get("MT_PROPOSE")) for d in data),
-        "mt_accorde": sum(_num(d.get("MT_ACCORDE")) for d in data),
-        "mt_en_attente": mt(lambda d: d.get("STATUT_PROPOSITION") == "EN_ATTENTE", "MT_PROPOSE"),
-        "mt_approuve": mt(lambda d: d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == "N", "MT_ACCORDE"),
-        "mt_genere": mt(lambda d: d.get("STATUT_PROPOSITION") == "APPROUVE" and d.get("PRET_GENERE") == "Y", "MT_ACCORDE"),
-        "mt_revise": mt(lambda d: d.get("STATUT_PROPOSITION") == "REVISE", "MT_PROPOSE"),
-        "mt_rejete": mt(lambda d: d.get("STATUT_PROPOSITION") == "REJETE", "MT_PROPOSE"),
-    }
-    scores = [_num(d.get("SCORE_TOTAL")) for d in data if d.get("SCORE_TOTAL") is not None]
-    decidees = sum(1 for d in data if d.get("STATUT_PROPOSITION") in ("APPROUVE", "REJETE", "REVISE"))
-    total_capital = sum(_num(d.get("MT_PRET_ORIGINAL")) for d in data)
-    total_encours = sum(_num(d.get("SOLDE_A_RACHETER")) for d in data)
-    nb_accorde = sum(1 for d in data if d.get("MT_ACCORDE"))
-    rapport = {
-        # Scoring
-        "total_capital": total_capital,
-        "capital_moyen": (total_capital / n) if n else 0,
-        "total_encours": total_encours,
-        "encours_moyen": (total_encours / n) if n else 0,
-        "score_moyen": (sum(scores) / len(scores)) if scores else 0,
-        # Volumes proposé / accordé (montant + nombre)
-        "nb_accorde": nb_accorde,
-        "taux_accord": (stats["mt_accorde"] / stats["mt_total"] * 100) if stats["mt_total"] else 0,
-        "taux_accord_nb": (nb_accorde / n * 100) if n else 0,
-        # Moyennes
-        "montant_moyen_propose": (stats["mt_total"] / n) if n else 0,
-        "montant_moyen_accorde": (stats["mt_accorde"] / nb_accorde) if nb_accorde else 0,
-        "taux_traitement": (decidees / n * 100) if n else 0,
-    }
+    stats, rapport = _build_stats_rapport(data)
     return render(request, "proposals/reporting.html", {
         "stats": stats,
         "rapport": rapport,
         "rapport_regions": _aggregate_by(data, "LIB_REGION"),
         "rapport_bureaux": _aggregate_by(data, "LIBELLE_BUREAU"),
         "propositions": data,
+    })
+
+
+@login_required
+def reporting_agence(request):
+    """Reporting limité à l'agence du chef d'agence (lecture seule, ventilé par bureau)."""
+    if not is_chef_agence(request.user):
+        return redirect("list_proposals")
+
+    infos = _verifier_matricule(request.user.username)
+    if not infos.get("existe"):
+        return redirect("/non_autorise/")
+    code_region = infos.get("code_region")
+    lib_region = infos.get("lib_region") or code_region
+
+    try:
+        resp = requests.get(f"{API_URL}/proposals/region/{code_region}", timeout=20)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        data = []
+        print("Erreur API region :", e)
+
+    for d in data:
+        st = d.get("STATUT_PROPOSITION")
+        if st == "APPROUVE":
+            d["CAT"] = "GENERE" if d.get("PRET_GENERE") == "Y" else "APPROUVE"
+        else:
+            d["CAT"] = st or "EN_ATTENTE"
+
+    stats, rapport = _build_stats_rapport(data)
+    return render(request, "proposals/reporting_agence.html", {
+        "stats": stats,
+        "rapport": rapport,
+        "rapport_bureaux": _aggregate_by(data, "LIBELLE_BUREAU"),
+        "propositions": data,
+        "region": lib_region,
     })

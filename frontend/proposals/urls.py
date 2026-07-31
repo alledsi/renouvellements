@@ -7,6 +7,7 @@ urlpatterns = [
     path("propositions/<int:id_prop>/decision/", views.decide_proposal, name="decide_proposal"),
     path("propositions/generer_prets/", views.generer_prets, name="generer_prets"),
     path("reporting/", views.reporting_view, name="reporting"),
+    path("reporting-agence/", views.reporting_agence, name="reporting_agence"),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('password/', views.change_password, name='change_password'),
