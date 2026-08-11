@@ -410,6 +410,31 @@ def reporting_view(request):
         else:
             d["CAT"] = st or "EN_ATTENTE"
 
+    # Liste des agences pour le sélecteur (le reporter peut zoomer sur une agence)
+    vues = {}
+    for d in data:
+        code = (d.get("CODE_REGION") or "").strip()
+        if code and code not in vues:
+            vues[code] = d.get("LIB_REGION") or code
+    agences = [{"code": c, "lib": vues[c]} for c in sorted(vues, key=lambda c: vues[c])]
+
+    agence_sel = (request.GET.get("agence") or "").strip()
+
+    if agence_sel:
+        # Vue d'une agence choisie par le reporter : on réutilise la page « par agence »
+        sous = [d for d in data if (d.get("CODE_REGION") or "").strip() == agence_sel]
+        stats, rapport = _build_stats_rapport(sous)
+        return render(request, "proposals/reporting_agence.html", {
+            "stats": stats,
+            "rapport": rapport,
+            "rapport_bureaux": _aggregate_by(sous, "LIBELLE_BUREAU"),
+            "propositions": sous,
+            "region": vues.get(agence_sel, agence_sel),
+            "agences": agences,
+            "agence_sel": agence_sel,
+        })
+
+    # Vue globale (toutes agences)
     stats, rapport = _build_stats_rapport(data)
     return render(request, "proposals/reporting.html", {
         "stats": stats,
@@ -417,6 +442,8 @@ def reporting_view(request):
         "rapport_regions": _aggregate_by(data, "LIB_REGION"),
         "rapport_bureaux": _aggregate_by(data, "LIBELLE_BUREAU"),
         "propositions": data,
+        "agences": agences,
+        "agence_sel": "",
     })
 
 
