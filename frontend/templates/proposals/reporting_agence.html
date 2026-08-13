@@ -7,19 +7,33 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
       <h2 class="fw-bold mb-1">Reporting agence — {{ region }}</h2>
-      <p class="text-muted mb-0">Vue d'ensemble — tous les bureaux de l'agence</p>
+      <p class="text-muted mb-0">Vue d'ensemble — bureaux de l'agence</p>
     </div>
-    {% if agences %}
-    <form method="get" action="{% url 'reporting' %}" class="d-flex align-items-center gap-2">
-      <label class="fw-semibold text-muted mb-0">Agence :</label>
-      <select name="agence" class="form-select w-auto" onchange="this.form.submit()">
-        <option value="">Toutes les agences</option>
-        {% for a in agences %}
-        <option value="{{ a.code }}" {% if a.code == agence_sel %}selected{% endif %}>{{ a.lib }}</option>
-        {% endfor %}
-      </select>
-    </form>
-    {% endif %}
+    <div class="d-flex flex-wrap align-items-center gap-3">
+      {% if agences %}
+      <form method="get" action="{% url 'reporting' %}" class="d-flex align-items-center gap-2">
+        <label class="fw-semibold text-muted mb-0">Agence :</label>
+        <select name="agence" class="form-select w-auto" onchange="this.form.submit()">
+          <option value="">Toutes les agences</option>
+          {% for a in agences %}
+          <option value="{{ a.code }}" {% if a.code == agence_sel %}selected{% endif %}>{{ a.lib }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+      {% if bureaux %}
+      <form method="get" action="{% if agence_sel %}{% url 'reporting' %}{% else %}{% url 'reporting_agence' %}{% endif %}" class="d-flex align-items-center gap-2">
+        {% if agence_sel %}<input type="hidden" name="agence" value="{{ agence_sel }}">{% endif %}
+        <label class="fw-semibold text-muted mb-0">Bureau :</label>
+        <select name="bureau" class="form-select w-auto" onchange="this.form.submit()">
+          <option value="">Tous les bureaux</option>
+          {% for b in bureaux %}
+          <option value="{{ b }}" {% if b == bureau_sel %}selected{% endif %}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+    </div>
   </div>
 
   <style>

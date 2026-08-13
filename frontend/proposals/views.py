@@ -423,6 +423,10 @@ def reporting_view(request):
     if agence_sel:
         # Vue d'une agence choisie par le reporter : on réutilise la page « par agence »
         sous = [d for d in data if (d.get("CODE_REGION") or "").strip() == agence_sel]
+        bureaux = sorted({(d.get("LIBELLE_BUREAU") or "").strip() for d in sous if (d.get("LIBELLE_BUREAU") or "").strip()})
+        bureau_sel = (request.GET.get("bureau") or "").strip()
+        if bureau_sel:
+            sous = [d for d in sous if (d.get("LIBELLE_BUREAU") or "").strip() == bureau_sel]
         stats, rapport = _build_stats_rapport(sous)
         return render(request, "proposals/reporting_agence.html", {
             "stats": stats,
@@ -432,6 +436,8 @@ def reporting_view(request):
             "region": vues.get(agence_sel, agence_sel),
             "agences": agences,
             "agence_sel": agence_sel,
+            "bureaux": bureaux,
+            "bureau_sel": bureau_sel,
         })
 
     # Vue globale (toutes agences)
@@ -474,6 +480,12 @@ def reporting_agence(request):
         else:
             d["CAT"] = st or "EN_ATTENTE"
 
+    # Filtre par bureau de l'agence
+    bureaux = sorted({(d.get("LIBELLE_BUREAU") or "").strip() for d in data if (d.get("LIBELLE_BUREAU") or "").strip()})
+    bureau_sel = (request.GET.get("bureau") or "").strip()
+    if bureau_sel:
+        data = [d for d in data if (d.get("LIBELLE_BUREAU") or "").strip() == bureau_sel]
+
     stats, rapport = _build_stats_rapport(data)
     return render(request, "proposals/reporting_agence.html", {
         "stats": stats,
@@ -481,4 +493,6 @@ def reporting_agence(request):
         "rapport_bureaux": _aggregate_by(data, "LIBELLE_BUREAU"),
         "propositions": data,
         "region": lib_region,
+        "bureaux": bureaux,
+        "bureau_sel": bureau_sel,
     })

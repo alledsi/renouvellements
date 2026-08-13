@@ -107,7 +107,7 @@
               {% endif %}
             </td>
             <td class="text-center">
-              {% if p.STATUT_PROPOSITION == "EN_ATTENTE" or p.STATUT_PROPOSITION == None %}
+              {% if p.STATUT_PROPOSITION == "EN_ATTENTE" or p.STATUT_PROPOSITION == "REVISE" or p.STATUT_PROPOSITION == None %}
                 <button type="button" class="btn btn-sm btn-outline-primary"
                         data-bs-toggle="collapse" data-bs-target="#detail-{{ p.ID_PROPOSITION }}">
                   Décider
@@ -124,7 +124,7 @@
           <!-- Ligne détail / décision -->
           <tr class="collapse detail-row" id="detail-{{ p.ID_PROPOSITION }}" data-cat="{{ p.CAT }}" data-parent="{{ p.ID_PROPOSITION }}">
             <td colspan="8">
-              {% if p.STATUT_PROPOSITION == "EN_ATTENTE" or p.STATUT_PROPOSITION == None %}
+              {% if p.STATUT_PROPOSITION == "EN_ATTENTE" or p.STATUT_PROPOSITION == "REVISE" or p.STATUT_PROPOSITION == None %}
               <!-- Formulaire de décision (uniquement pour les propositions en attente) -->
               <form method="POST" action="{% url 'decide_proposal' p.ID_PROPOSITION %}" class="p-3 border-top decision-form">
                 {% csrf_token %}
