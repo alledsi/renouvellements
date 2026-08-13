@@ -8,6 +8,7 @@
     <div>
       <h2 class="fw-bold mb-1">Reporting global des renouvellements</h2>
       <p class="text-muted mb-0">Vue d'ensemble — toutes agences, tous bureaux</p>
+      {% if date_tirage %}<span class="badge rounded-pill bg-primary-subtle text-primary-emphasis mt-2">Tirage du {{ date_tirage }}</span>{% endif %}
     </div>
     {% if agences %}
     <form method="get" action="{% url 'reporting' %}" class="d-flex align-items-center gap-2">

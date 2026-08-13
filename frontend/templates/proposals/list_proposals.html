@@ -15,6 +15,7 @@
     <div>
       <h2 class="fw-bold mb-1">Comité de Crédit : AGENCE {{region}}</h2>
       <p class="text-muted mb-0">Gestion des propositions de renouvellement</p>
+      {% if date_tirage %}<span class="badge rounded-pill bg-primary-subtle text-primary-emphasis mt-2">Tirage du {{ date_tirage }}</span>{% endif %}
     </div>
     <button id="generatePretsBtn"
             type="button"

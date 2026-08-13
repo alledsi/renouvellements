@@ -43,6 +43,18 @@ def _num(v):
         return 0.0
 
 
+def _date_tirage(data):
+    """Date de proposition (tirage), identique pour tous les dossiers, formatée jj/mm/aaaa."""
+    for d in data:
+        dp = d.get("DATE_PROPOSITION")
+        if dp:
+            try:
+                return datetime.datetime.fromisoformat(dp).strftime("%d/%m/%Y")
+            except Exception:
+                return str(dp)[:10]
+    return None
+
+
 def _aggregate_by(data, field):
     """Agrège les propositions par un champ (région ou bureau)."""
     from collections import defaultdict
@@ -283,6 +295,7 @@ def list_proposals(request):
         "region": region,
         "rapport": rapport,
         "rapport_bureaux": rapport_bureaux,
+        "date_tirage": _date_tirage(data),
     })
 
 @csrf_exempt
@@ -424,6 +437,7 @@ def reporting_view(request):
         # Vue d'une agence choisie par le reporter : on réutilise la page « par agence »
         sous = [d for d in data if (d.get("CODE_REGION") or "").strip() == agence_sel]
         bureaux = sorted({(d.get("LIBELLE_BUREAU") or "").strip() for d in sous if (d.get("LIBELLE_BUREAU") or "").strip()})
+        date_tirage = _date_tirage(sous)
         bureau_sel = (request.GET.get("bureau") or "").strip()
         if bureau_sel:
             sous = [d for d in sous if (d.get("LIBELLE_BUREAU") or "").strip() == bureau_sel]
@@ -438,6 +452,7 @@ def reporting_view(request):
             "agence_sel": agence_sel,
             "bureaux": bureaux,
             "bureau_sel": bureau_sel,
+            "date_tirage": date_tirage,
         })
 
     # Vue globale (toutes agences)
@@ -450,6 +465,7 @@ def reporting_view(request):
         "propositions": data,
         "agences": agences,
         "agence_sel": "",
+        "date_tirage": _date_tirage(data),
     })
 
 
@@ -482,6 +498,7 @@ def reporting_agence(request):
 
     # Filtre par bureau de l'agence
     bureaux = sorted({(d.get("LIBELLE_BUREAU") or "").strip() for d in data if (d.get("LIBELLE_BUREAU") or "").strip()})
+    date_tirage = _date_tirage(data)
     bureau_sel = (request.GET.get("bureau") or "").strip()
     if bureau_sel:
         data = [d for d in data if (d.get("LIBELLE_BUREAU") or "").strip() == bureau_sel]
@@ -495,4 +512,5 @@ def reporting_agence(request):
         "region": lib_region,
         "bureaux": bureaux,
         "bureau_sel": bureau_sel,
+        "date_tirage": date_tirage,
     })
